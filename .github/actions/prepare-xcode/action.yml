@@ -1,0 +1,71 @@
+name: Prepare Xcode
+description: >-
+    Selects Xcode, restores resolved packages, and writes the CI entitlements
+    and the SIGNING_OVERRIDES that sign with them into the job's environment.
+    Every macOS job runs these the same way.
+
+inputs:
+    xcode-version:
+        description: >-
+            The Xcode to select, as in /Applications/Xcode_<version>.app.
+            Empty keeps whatever Xcode the image selects by default.
+        default: ""
+    entitlements:
+        description: >-
+            The entitlements file this configuration signs with
+            (CODE_SIGN_ENTITLEMENTS in the project). The CI copy drops what a
+            build with no provisioning profile cannot claim: the keychain
+            access group, and WeatherKit, for which Xcode refuses to sign
+            without a profile.
+        required: true
+
+runs:
+    using: composite
+    steps:
+        # Caches are keyed on the exact Xcode build, so products and modules
+        # from another toolchain are never restored.
+        - name: Select Xcode
+          shell: bash
+          env:
+              VERSION: ${{ inputs.xcode-version }}
+          run: |
+              if [ -n "$VERSION" ]; then
+                  developer_dir="/Applications/Xcode_${VERSION}.app/Contents/Developer"
+                  echo "DEVELOPER_DIR=$developer_dir" >> "$GITHUB_ENV"
+                  export DEVELOPER_DIR="$developer_dir"
+              fi
+              xcodebuild -version
+              echo "XCODE_BUILD=$(xcodebuild -version | awk '/Build version/ { print $3 }')" >> "$GITHUB_ENV"
+
+        # Resolved packages change only when Package.resolved does, so this
+        # key hits almost every run.
+        - name: Cache resolved packages
+          uses: actions/cache@caa296126883cff596d87d8935842f9db880ef25 # v5.1.0
+          with:
+              path: ~/Library/Caches/org.swift.swiftpm
+              key: ${{ runner.os }}-xcode-${{ env.XCODE_BUILD }}-spm-${{ hashFiles('**/Package.resolved') }}
+              restore-keys: |
+                  ${{ runner.os }}-xcode-${{ env.XCODE_BUILD }}-spm-
+
+        # Runners have no signing certificate and no provisioning profile.
+        # Ad-hoc signing is still required for arm64 binaries to execute, so
+        # the overrides pin the identity rather than disabling signing, and
+        # swap in the configuration's own entitlements minus what a build
+        # with no profile cannot claim. PlistBuddy, not plutil: plutil reads
+        # the dots in a key as a path.
+        - name: Derive CI entitlements and signing overrides
+          shell: bash
+          env:
+              SOURCE: ${{ inputs.entitlements }}
+          run: |
+              mkdir -p .build/ci
+              target=.build/ci/App.CI.entitlements
+              cp "$SOURCE" "$target"
+              for key in keychain-access-groups com.apple.developer.weatherkit; do
+                  if /usr/libexec/PlistBuddy -c "Print :$key" "$target" >/dev/null 2>&1; then
+                      /usr/libexec/PlistBuddy -c "Delete :$key" "$target"
+                  fi
+              done
+              overrides="CODE_SIGN_IDENTITY=- CODE_SIGN_STYLE=Manual DEVELOPMENT_TEAM="
+              overrides+=" PROVISIONING_PROFILE_SPECIFIER= CODE_SIGN_ENTITLEMENTS=$target"
+              echo "SIGNING_OVERRIDES=$overrides" >> "$GITHUB_ENV"

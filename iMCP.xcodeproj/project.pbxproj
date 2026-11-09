@@ -7,28 +7,66 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		B0AA00010000000000000001 /* main.swift in Sources */ = {isa = PBXBuildFile; fileRef = B0AA00020000000000000002 /* main.swift */; };
+		B0AA00030000000000000003 /* iMCPAlwaysOn in Copy Always-On Helper */ = {isa = PBXBuildFile; fileRef = B0AA00040000000000000004 /* iMCPAlwaysOn */; settings = {ATTRIBUTES = (CodeSignOnCopy, ); }; };
+		B0AA00050000000000000005 /* co.dododo.iMCP.always-on.plist in Copy LaunchAgent */ = {isa = PBXBuildFile; fileRef = B0AA00060000000000000006 /* co.dododo.iMCP.always-on.plist */; };
 		76F80A6E3EDBFB02048A6ED8 /* Cocoa.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = E0E66768348853754D32208C /* Cocoa.framework */; };
 		826C0834A5B647F8A918E54D /* ServiceLifecycle in Frameworks */ = {isa = PBXBuildFile; productRef = DCE061F8A68D0CD546D919E2 /* ServiceLifecycle */; };
 		8DFCE9E4CBCBEB93A32E8560 /* ServiceLifecycleTestKit in Frameworks */ = {isa = PBXBuildFile; productRef = 1CD6B9E157EEC273F178543D /* ServiceLifecycleTestKit */; };
-		930214FCD680D7D74158F215 /* ServiceGroupConfigurationTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 75E148EAC5AC8B3263C5AA13 /* ServiceGroupConfigurationTests.swift */; };
-		F809556E2D7888920055B911 /* TypedStream in Frameworks */ = {isa = PBXBuildFile; productRef = F809556D2D7888920055B911 /* TypedStream */; };
+		B0SRP0030000000000000003 /* SRP in Frameworks */ = {isa = PBXBuildFile; productRef = B0SRP0010000000000000001 /* SRP */; };
+		B0CAFE050000000000000005 /* MCP in Frameworks */ = {isa = PBXBuildFile; productRef = B0CAFE060000000000000006 /* MCP */; };
 		F80955702D7888920055B911 /* iMessage in Frameworks */ = {isa = PBXBuildFile; productRef = F809556F2D7888920055B911 /* iMessage */; };
 		F825BDBF2D9AD00E0063ADD7 /* ServiceLifecycle in Frameworks */ = {isa = PBXBuildFile; productRef = F825BDBE2D9AD00E0063ADD7 /* ServiceLifecycle */; };
-		F825BDC12D9AD00E0063ADD7 /* UnixSignals in Frameworks */ = {isa = PBXBuildFile; productRef = F825BDC02D9AD00E0063ADD7 /* UnixSignals */; };
 		F873F48D2D712BCF0035CD0A /* Ontology in Frameworks */ = {isa = PBXBuildFile; productRef = F873F48C2D712BCF0035CD0A /* Ontology */; };
 		F87796FC2E0764AE00328CC6 /* MenuBarExtraAccess in Frameworks */ = {isa = PBXBuildFile; productRef = F87796FB2E0764AE00328CC6 /* MenuBarExtraAccess */; };
 		F88358372D64A085000317CD /* Logging in Frameworks */ = {isa = PBXBuildFile; productRef = F88358362D64A085000317CD /* Logging */; };
 		F885C6B82D66079100963B25 /* imcp-server in Copy Executables */ = {isa = PBXBuildFile; fileRef = F8F44EB62D5908D00075D79C /* imcp-server */; settings = {ATTRIBUTES = (CodeSignOnCopy, ); }; };
-		F8A7DE3E2DCB76F700530587 /* MCP in Frameworks */ = {isa = PBXBuildFile; productRef = F8A7DE3D2DCB76F700530587 /* MCP */; };
 		F8CE997B2D591CF200C61CA2 /* MCP in Frameworks */ = {isa = PBXBuildFile; productRef = F8CE997A2D591CF200C61CA2 /* MCP */; };
-		F8D7C3172DCBD30500A4775F /* MCP in Frameworks */ = {isa = PBXBuildFile; productRef = F8D7C3162DCBD30500A4775F /* MCP */; };
 		F8D7C31A2DCBD32100A4775F /* MCP in Frameworks */ = {isa = PBXBuildFile; productRef = F8D7C3192DCBD32100A4775F /* MCP */; };
 		F8D8C48E2DCE0E6800369E5C /* JSONSchema in Frameworks */ = {isa = PBXBuildFile; productRef = F8D8C48D2DCE0E6800369E5C /* JSONSchema */; };
-		F8F1D2F82D6F9E0C00F6323D /* MCP in Frameworks */ = {isa = PBXBuildFile; productRef = F8F44E9C2D5903F70075D79C /* MCP */; };
 		F9E9902DC72D90F6C423EFE2 /* Logging in Frameworks */ = {isa = PBXBuildFile; productRef = 48ABEE9E6903427DD79096A1 /* Logging */; };
 /* End PBXBuildFile section */
 
+/* Begin PBXContainerItemProxy section */
+		B0AA00070000000000000007 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = F8F44E652D59038D0075D79C /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = B0AA00080000000000000008;
+			remoteInfo = iMCPAlwaysOn;
+		};
+		A014000C2E0000000000000C /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = F8F44E652D59038D0075D79C /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = F8F44E6C2D59038D0075D79C;
+			remoteInfo = iMCP;
+		};
+/* End PBXContainerItemProxy section */
+
 /* Begin PBXCopyFilesBuildPhase section */
+		B0AA00090000000000000009 /* Copy Always-On Helper */ = {
+			isa = PBXCopyFilesBuildPhase;
+			buildActionMask = 2147483647;
+			dstPath = "";
+			dstSubfolderSpec = 6;
+			files = (
+				B0AA00030000000000000003 /* iMCPAlwaysOn in Copy Always-On Helper */,
+			);
+			name = "Copy Always-On Helper";
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		B0AA000A000000000000000A /* Copy LaunchAgent */ = {
+			isa = PBXCopyFilesBuildPhase;
+			buildActionMask = 2147483647;
+			dstPath = Contents/Library/LaunchAgents;
+			dstSubfolderSpec = 1;
+			files = (
+				B0AA00050000000000000005 /* co.dododo.iMCP.always-on.plist in Copy LaunchAgent */,
+			);
+			name = "Copy LaunchAgent";
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 		F84900952D63C74F0044AA81 /* Copy Executables */ = {
 			isa = PBXCopyFilesBuildPhase;
 			buildActionMask = 2147483647;
@@ -52,8 +90,11 @@
 /* End PBXCopyFilesBuildPhase section */
 
 /* Begin PBXFileReference section */
+		B0AA00020000000000000002 /* main.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = main.swift; sourceTree = "<group>"; };
+		B0AA00040000000000000004 /* iMCPAlwaysOn */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; includeInIndex = 0; path = iMCPAlwaysOn; sourceTree = BUILT_PRODUCTS_DIR; };
+		B0AA00060000000000000006 /* co.dododo.iMCP.always-on.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = "co.dododo.iMCP.always-on.plist"; sourceTree = "<group>"; };
 		6A5CFBBEC66BC8CDA9D65496 /* imcp-serverTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = "imcp-serverTests.xctest"; sourceTree = BUILT_PRODUCTS_DIR; };
-		75E148EAC5AC8B3263C5AA13 /* ServiceGroupConfigurationTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = ServiceGroupConfigurationTests.swift; sourceTree = "<group>"; };
+		A01400012E00000000000001 /* iMCPTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = iMCPTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		E0E66768348853754D32208C /* Cocoa.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = Cocoa.framework; path = Platforms/MacOSX.platform/Developer/SDKs/MacOSX15.0.sdk/System/Library/Frameworks/Cocoa.framework; sourceTree = DEVELOPER_DIR; };
 		F8F44E6D2D59038D0075D79C /* iMCP.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = iMCP.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		F8F44EB62D5908D00075D79C /* imcp-server */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; includeInIndex = 0; path = "imcp-server"; sourceTree = BUILT_PRODUCTS_DIR; };
@@ -66,6 +107,20 @@
 				Info.plist,
 			);
 			target = F8F44E6C2D59038D0075D79C /* iMCP */;
+		};
+		B0511A0E0000000000000002 /* Exceptions for "CLI" folder in "imcp-serverTests" target */ = {
+			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
+			membershipExceptions = (
+				main.swift,
+			);
+			target = 8F6A71ADC0CC6BD168A9167D /* imcp-serverTests */;
+		};
+		A01400072E00000000000008 /* Exceptions for "iMCPTests" folder in "imcp-serverTests" target */ = {
+			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
+			membershipExceptions = (
+				"Support/NWListener+StartUntilReady.swift",
+			);
+			target = 8F6A71ADC0CC6BD168A9167D /* imcp-serverTests */;
 		};
 /* End PBXFileSystemSynchronizedBuildFileExceptionSet section */
 
@@ -80,17 +135,53 @@
 		};
 		F8F44EB72D5908D00075D79C /* CLI */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
+			exceptions = (
+				B0511A0E0000000000000002 /* Exceptions for "CLI" folder in "imcp-serverTests" target */,
+			);
 			path = CLI;
+			sourceTree = "<group>";
+		};
+		B0511A0E0000000000000001 /* Shared */ = {
+			isa = PBXFileSystemSynchronizedRootGroup;
+			path = Shared;
+			sourceTree = "<group>";
+		};
+		9784E568F0621136136A0EAC /* CLITests */ = {
+			isa = PBXFileSystemSynchronizedRootGroup;
+			path = CLITests;
+			sourceTree = "<group>";
+		};
+		A01400072E00000000000007 /* iMCPTests */ = {
+			isa = PBXFileSystemSynchronizedRootGroup;
+			exceptions = (
+				A01400072E00000000000008 /* Exceptions for "iMCPTests" folder in "imcp-serverTests" target */,
+			);
+			path = iMCPTests;
 			sourceTree = "<group>";
 		};
 /* End PBXFileSystemSynchronizedRootGroup section */
 
 /* Begin PBXFrameworksBuildPhase section */
+		B0AA000B000000000000000B /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		A01400042E00000000000004 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 		244B6A9EEE0501F04569493A /* Frameworks */ = {
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
 				76F80A6E3EDBFB02048A6ED8 /* Cocoa.framework in Frameworks */,
+				B0CAFE050000000000000005 /* MCP in Frameworks */,
 				826C0834A5B647F8A918E54D /* ServiceLifecycle in Frameworks */,
 				8DFCE9E4CBCBEB93A32E8560 /* ServiceLifecycleTestKit in Frameworks */,
 				F9E9902DC72D90F6C423EFE2 /* Logging in Frameworks */,
@@ -101,13 +192,10 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				F809556E2D7888920055B911 /* TypedStream in Frameworks */,
+				B0SRP0030000000000000003 /* SRP in Frameworks */,
 				F87796FC2E0764AE00328CC6 /* MenuBarExtraAccess in Frameworks */,
 				F873F48D2D712BCF0035CD0A /* Ontology in Frameworks */,
 				F8D7C31A2DCBD32100A4775F /* MCP in Frameworks */,
-				F8A7DE3E2DCB76F700530587 /* MCP in Frameworks */,
-				F8F1D2F82D6F9E0C00F6323D /* MCP in Frameworks */,
-				F8D7C3172DCBD30500A4775F /* MCP in Frameworks */,
 				F80955702D7888920055B911 /* iMessage in Frameworks */,
 				F8D8C48E2DCE0E6800369E5C /* JSONSchema in Frameworks */,
 			);
@@ -120,27 +208,27 @@
 				F88358372D64A085000317CD /* Logging in Frameworks */,
 				F825BDBF2D9AD00E0063ADD7 /* ServiceLifecycle in Frameworks */,
 				F8CE997B2D591CF200C61CA2 /* MCP in Frameworks */,
-				F825BDC12D9AD00E0063ADD7 /* UnixSignals in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
 /* End PBXFrameworksBuildPhase section */
 
 /* Begin PBXGroup section */
+		B0AA000C000000000000000C /* AlwaysOnHelper */ = {
+			isa = PBXGroup;
+			children = (
+				B0AA00020000000000000002 /* main.swift */,
+				B0AA00060000000000000006 /* co.dododo.iMCP.always-on.plist */,
+			);
+			path = AlwaysOnHelper;
+			sourceTree = "<group>";
+		};
 		13058B0C8A894B6DB0A7D2A8 /* Frameworks */ = {
 			isa = PBXGroup;
 			children = (
 				F53ADAE0D917F06C8D01D825 /* OS X */,
 			);
 			name = Frameworks;
-			sourceTree = "<group>";
-		};
-		9784E568F0621136136A0EAC /* CLITests */ = {
-			isa = PBXGroup;
-			children = (
-				75E148EAC5AC8B3263C5AA13 /* ServiceGroupConfigurationTests.swift */,
-			);
-			path = CLITests;
 			sourceTree = "<group>";
 		};
 		F53ADAE0D917F06C8D01D825 /* OS X */ = {
@@ -156,9 +244,12 @@
 			children = (
 				F8F44E6F2D59038D0075D79C /* App */,
 				F8F44EB72D5908D00075D79C /* CLI */,
+				B0511A0E0000000000000001 /* Shared */,
+				B0AA000C000000000000000C /* AlwaysOnHelper */,
 				F8F44E6E2D59038D0075D79C /* Products */,
 				13058B0C8A894B6DB0A7D2A8 /* Frameworks */,
 				9784E568F0621136136A0EAC /* CLITests */,
+				A01400072E00000000000007 /* iMCPTests */,
 			);
 			sourceTree = "<group>";
 		};
@@ -168,6 +259,8 @@
 				F8F44E6D2D59038D0075D79C /* iMCP.app */,
 				F8F44EB62D5908D00075D79C /* imcp-server */,
 				6A5CFBBEC66BC8CDA9D65496 /* imcp-serverTests.xctest */,
+				A01400012E00000000000001 /* iMCPTests.xctest */,
+				B0AA00040000000000000004 /* iMCPAlwaysOn */,
 			);
 			name = Products;
 			sourceTree = "<group>";
@@ -175,6 +268,47 @@
 /* End PBXGroup section */
 
 /* Begin PBXNativeTarget section */
+		B0AA00080000000000000008 /* iMCPAlwaysOn */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = B0AA000D000000000000000D /* Build configuration list for PBXNativeTarget "iMCPAlwaysOn" */;
+			buildPhases = (
+				B0AA000E000000000000000E /* Sources */,
+				B0AA000B000000000000000B /* Frameworks */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			name = iMCPAlwaysOn;
+			packageProductDependencies = (
+			);
+			productName = iMCPAlwaysOn;
+			productReference = B0AA00040000000000000004 /* iMCPAlwaysOn */;
+			productType = "com.apple.product-type.tool";
+		};
+		A01400082E00000000000008 /* iMCPTests */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = A014000B2E0000000000000B /* Build configuration list for PBXNativeTarget "iMCPTests" */;
+			buildPhases = (
+				A01400052E00000000000005 /* Sources */,
+				A01400042E00000000000004 /* Frameworks */,
+				A01400062E00000000000006 /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+				A014000D2E0000000000000D /* PBXTargetDependency */,
+			);
+			fileSystemSynchronizedGroups = (
+				A01400072E00000000000007 /* iMCPTests */,
+			);
+			name = iMCPTests;
+			packageProductDependencies = (
+			);
+			productName = iMCPTests;
+			productReference = A01400012E00000000000001 /* iMCPTests.xctest */;
+			productType = "com.apple.product-type.bundle.unit-test";
+		};
 		8F6A71ADC0CC6BD168A9167D /* imcp-serverTests */ = {
 			isa = PBXNativeTarget;
 			buildConfigurationList = 420FB1A6748E0C4FEF3CC576 /* Build configuration list for PBXNativeTarget "imcp-serverTests" */;
@@ -187,11 +321,17 @@
 			);
 			dependencies = (
 			);
+			fileSystemSynchronizedGroups = (
+				9784E568F0621136136A0EAC /* CLITests */,
+				F8F44EB72D5908D00075D79C /* CLI */,
+				B0511A0E0000000000000001 /* Shared */,
+			);
 			name = "imcp-serverTests";
 			packageProductDependencies = (
 				DCE061F8A68D0CD546D919E2 /* ServiceLifecycle */,
 				1CD6B9E157EEC273F178543D /* ServiceLifecycleTestKit */,
 				48ABEE9E6903427DD79096A1 /* Logging */,
+				B0CAFE060000000000000006 /* MCP */,
 			);
 			productName = "imcp-serverTests";
 			productReference = 6A5CFBBEC66BC8CDA9D65496 /* imcp-serverTests.xctest */;
@@ -205,25 +345,26 @@
 				F8F44E6A2D59038D0075D79C /* Frameworks */,
 				F8F44E6B2D59038D0075D79C /* Resources */,
 				F84900952D63C74F0044AA81 /* Copy Executables */,
+				B0AA00090000000000000009 /* Copy Always-On Helper */,
+				B0AA000A000000000000000A /* Copy LaunchAgent */,
 			);
 			buildRules = (
 			);
 			dependencies = (
+				B0AA000F000000000000000F /* PBXTargetDependency */,
 			);
 			fileSystemSynchronizedGroups = (
 				F8F44E6F2D59038D0075D79C /* App */,
+				B0511A0E0000000000000001 /* Shared */,
 			);
 			name = iMCP;
 			packageProductDependencies = (
-				F8F44E9C2D5903F70075D79C /* MCP */,
 				F873F48C2D712BCF0035CD0A /* Ontology */,
-				F809556D2D7888920055B911 /* TypedStream */,
 				F809556F2D7888920055B911 /* iMessage */,
-				F8A7DE3D2DCB76F700530587 /* MCP */,
-				F8D7C3162DCBD30500A4775F /* MCP */,
 				F8D7C3192DCBD32100A4775F /* MCP */,
 				F8D8C48D2DCE0E6800369E5C /* JSONSchema */,
 				F87796FB2E0764AE00328CC6 /* MenuBarExtraAccess */,
+				B0SRP0010000000000000001 /* SRP */,
 			);
 			productName = iMCP;
 			productReference = F8F44E6D2D59038D0075D79C /* iMCP.app */;
@@ -243,13 +384,13 @@
 			);
 			fileSystemSynchronizedGroups = (
 				F8F44EB72D5908D00075D79C /* CLI */,
+				B0511A0E0000000000000001 /* Shared */,
 			);
 			name = "imcp-server";
 			packageProductDependencies = (
 				F8CE997A2D591CF200C61CA2 /* MCP */,
 				F88358362D64A085000317CD /* Logging */,
 				F825BDBE2D9AD00E0063ADD7 /* ServiceLifecycle */,
-				F825BDC02D9AD00E0063ADD7 /* UnixSignals */,
 			);
 			productName = "imcp-server";
 			productReference = F8F44EB62D5908D00075D79C /* imcp-server */;
@@ -265,8 +406,15 @@
 				LastSwiftUpdateCheck = 1620;
 				LastUpgradeCheck = 2620;
 				TargetAttributes = {
+					B0AA00080000000000000008 = {
+						CreatedOnToolsVersion = 16.2;
+					};
 					F8F44E6C2D59038D0075D79C = {
 						CreatedOnToolsVersion = 16.2;
+					};
+					A01400082E00000000000008 = {
+						CreatedOnToolsVersion = 16.2;
+						TestTargetID = F8F44E6C2D59038D0075D79C;
 					};
 					F8F44EB52D5908D00075D79C = {
 						CreatedOnToolsVersion = 16.2;
@@ -290,6 +438,7 @@
 				F8D7C3182DCBD32100A4775F /* XCRemoteSwiftPackageReference "swift-sdk" */,
 				F8D8C48C2DCE0E6800369E5C /* XCRemoteSwiftPackageReference "JSONSchema" */,
 				F87796FA2E0764AE00328CC6 /* XCRemoteSwiftPackageReference "MenuBarExtraAccess" */,
+				B0SRP0020000000000000002 /* XCLocalSwiftPackageReference "Packages/SRP" */,
 			);
 			preferredProjectObjectVersion = 77;
 			productRefGroup = F8F44E6E2D59038D0075D79C /* Products */;
@@ -297,13 +446,22 @@
 			projectRoot = "";
 			targets = (
 				F8F44E6C2D59038D0075D79C /* iMCP */,
+				B0AA00080000000000000008 /* iMCPAlwaysOn */,
 				F8F44EB52D5908D00075D79C /* imcp-server */,
 				8F6A71ADC0CC6BD168A9167D /* imcp-serverTests */,
+				A01400082E00000000000008 /* iMCPTests */,
 			);
 		};
 /* End PBXProject section */
 
 /* Begin PBXResourcesBuildPhase section */
+		A01400062E00000000000006 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 		9C8F6A2CF5080CD1E01C127F /* Resources */ = {
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
@@ -321,11 +479,25 @@
 /* End PBXResourcesBuildPhase section */
 
 /* Begin PBXSourcesBuildPhase section */
+		B0AA000E000000000000000E /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				B0AA00010000000000000001 /* main.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		A01400052E00000000000005 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 		B53F67B71CE8E2EB7B5CB823 /* Sources */ = {
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				930214FCD680D7D74158F215 /* ServiceGroupConfigurationTests.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -345,7 +517,97 @@
 		};
 /* End PBXSourcesBuildPhase section */
 
+/* Begin PBXTargetDependency section */
+		B0AA000F000000000000000F /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = B0AA00080000000000000008 /* iMCPAlwaysOn */;
+			targetProxy = B0AA00070000000000000007 /* PBXContainerItemProxy */;
+		};
+		A014000D2E0000000000000D /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = F8F44E6C2D59038D0075D79C /* iMCP */;
+			targetProxy = A014000C2E0000000000000C /* PBXContainerItemProxy */;
+		};
+/* End PBXTargetDependency section */
+
 /* Begin XCBuildConfiguration section */
+		B0AA00100000000000000010 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CODE_SIGN_STYLE = Automatic;
+				CREATE_INFOPLIST_SECTION_IN_BINARY = YES;
+				ENABLE_HARDENED_RUNTIME = YES;
+				GENERATE_INFOPLIST_FILE = YES;
+				MACOSX_DEPLOYMENT_TARGET = 15.1;
+				PRODUCT_BUNDLE_IDENTIFIER = "co.dododo.iMCP.always-on.agent";
+				PRODUCT_NAME = iMCPAlwaysOn;
+				SDKROOT = macosx;
+				SWIFT_VERSION = 5.0;
+			};
+			name = Debug;
+		};
+		B0AA00110000000000000011 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CODE_SIGN_STYLE = Automatic;
+				CREATE_INFOPLIST_SECTION_IN_BINARY = YES;
+				ENABLE_HARDENED_RUNTIME = YES;
+				GENERATE_INFOPLIST_FILE = YES;
+				MACOSX_DEPLOYMENT_TARGET = 15.1;
+				PRODUCT_BUNDLE_IDENTIFIER = "co.dododo.iMCP.always-on.agent";
+				PRODUCT_NAME = iMCPAlwaysOn;
+				SDKROOT = macosx;
+				SWIFT_VERSION = 5.0;
+			};
+			name = Release;
+		};
+		A01400092E00000000000009 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				BUNDLE_LOADER = "$(TEST_HOST)";
+				CODE_SIGN_IDENTITY = "Apple Development";
+				CODE_SIGN_STYLE = Automatic;
+				DEVELOPMENT_TEAM = HJF7LN64XX;
+				ENABLE_TESTING_SEARCH_PATHS = YES;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_KEY_CFBundlePackageType = BNDL;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/../Frameworks",
+					"@loader_path/../Frameworks",
+				);
+				MACOSX_DEPLOYMENT_TARGET = 15.1;
+				PRODUCT_BUNDLE_IDENTIFIER = co.dododo.iMCPTests;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = macosx;
+				SUPPORTED_PLATFORMS = macosx;
+				SWIFT_VERSION = 5.0;
+				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/iMCP.app/Contents/MacOS/iMCP";
+			};
+			name = Debug;
+		};
+		A014000A2E0000000000000A /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				BUNDLE_LOADER = "$(TEST_HOST)";
+				ENABLE_TESTING_SEARCH_PATHS = YES;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_KEY_CFBundlePackageType = BNDL;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/../Frameworks",
+					"@loader_path/../Frameworks",
+				);
+				MACOSX_DEPLOYMENT_TARGET = 15.1;
+				PRODUCT_BUNDLE_IDENTIFIER = co.dododo.iMCPTests;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = macosx;
+				SUPPORTED_PLATFORMS = macosx;
+				SWIFT_VERSION = 5.0;
+				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/iMCP.app/Contents/MacOS/iMCP";
+			};
+			name = Release;
+		};
 		730CCB1C20FB35151860DD40 /* Release */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
@@ -506,16 +768,13 @@
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
 				AUTOMATION_APPLE_EVENTS = YES;
-				CODE_SIGNING_ALLOWED = NO;
-				CODE_SIGNING_REQUIRED = NO;
 				CODE_SIGN_ENTITLEMENTS = App/App.Debug.entitlements;
-				CODE_SIGN_IDENTITY = "-";
-				"CODE_SIGN_IDENTITY[sdk=macosx*]" = "Apple Development";
-				CODE_SIGN_STYLE = Manual;
+				CODE_SIGN_IDENTITY = "Apple Development";
+				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 11;
 				DEAD_CODE_STRIPPING = YES;
-				DEVELOPMENT_TEAM = "";
-				ENABLE_APP_SANDBOX = YES;
+				DEVELOPMENT_TEAM = HJF7LN64XX;
+				ENABLE_APP_SANDBOX = NO;
 				ENABLE_HARDENED_RUNTIME = YES;
 				ENABLE_INCOMING_NETWORK_CONNECTIONS = YES;
 				ENABLE_OUTGOING_NETWORK_CONNECTIONS = YES;
@@ -525,7 +784,6 @@
 				ENABLE_RESOURCE_ACCESS_CAMERA = YES;
 				ENABLE_RESOURCE_ACCESS_CONTACTS = YES;
 				ENABLE_RESOURCE_ACCESS_LOCATION = YES;
-				ENABLE_USER_SELECTED_FILES = readwrite;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = App/Info.plist;
 				INFOPLIST_KEY_CFBundleDisplayName = iMCP;
@@ -533,24 +791,13 @@
 				INFOPLIST_KEY_LSUIElement = YES;
 				INFOPLIST_KEY_NSCalendarsFullAccessUsageDescription = "iMCP needs access to provide event information to the MCP server.";
 				INFOPLIST_KEY_NSCameraUsageDescription = "iMCP needs access to the camera to take pictures for the MCP server.";
+				INFOPLIST_KEY_NSAppleEventsUsageDescription = "iMCP needs to control Notes to provide note information to the MCP server.";
 				INFOPLIST_KEY_NSContactsUsageDescription = "iMCP needs access to provide contact information to the MCP server.";
+				INFOPLIST_KEY_NSPhotoLibraryUsageDescription = "iMCP needs access to provide photo information to the MCP server.";
 				INFOPLIST_KEY_NSHumanReadableCopyright = "© 2026 dododo, LLC. All rights reserved.";
 				INFOPLIST_KEY_NSLocalNetworkUsageDescription = "iMCP uses the local network to connect to the MCP server.";
-				INFOPLIST_KEY_NSLocationAlwaysAndWhenInUseUsageDescription = "iMCP needs access to provide location information to the MCP server.";
-				INFOPLIST_KEY_NSLocationWhenInUseUsageDescription = "iMCP needs access to provide location information to the MCP server.";
 				INFOPLIST_KEY_NSMicrophoneUsageDescription = "iMCP needs access to the microphone to record audio for the MCP server.";
 				INFOPLIST_KEY_NSRemindersFullAccessUsageDescription = "iMCP needs access to provide reminders information to the MCP server.";
-				"INFOPLIST_KEY_UIApplicationSceneManifest_Generation[sdk=iphoneos*]" = YES;
-				"INFOPLIST_KEY_UIApplicationSceneManifest_Generation[sdk=iphonesimulator*]" = YES;
-				"INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents[sdk=iphoneos*]" = YES;
-				"INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents[sdk=iphonesimulator*]" = YES;
-				"INFOPLIST_KEY_UILaunchScreen_Generation[sdk=iphoneos*]" = YES;
-				"INFOPLIST_KEY_UILaunchScreen_Generation[sdk=iphonesimulator*]" = YES;
-				"INFOPLIST_KEY_UIStatusBarStyle[sdk=iphoneos*]" = UIStatusBarStyleDefault;
-				"INFOPLIST_KEY_UIStatusBarStyle[sdk=iphonesimulator*]" = UIStatusBarStyleDefault;
-				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPad = "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
-				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPhone = "UIInterfaceOrientationPortrait UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
-				IPHONEOS_DEPLOYMENT_TARGET = 18.2;
 				LD_RUNPATH_SEARCH_PATHS = "@executable_path/Frameworks";
 				"LD_RUNPATH_SEARCH_PATHS[sdk=macosx*]" = "@executable_path/../Frameworks";
 				MACOSX_DEPLOYMENT_TARGET = 15.1;
@@ -563,7 +810,6 @@
 				SUPPORTS_MACCATALYST = NO;
 				SWIFT_EMIT_LOC_STRINGS = YES;
 				SWIFT_VERSION = 5.0;
-				XROS_DEPLOYMENT_TARGET = 2.2;
 			};
 			name = Debug;
 		};
@@ -579,7 +825,7 @@
 				CURRENT_PROJECT_VERSION = 11;
 				DEAD_CODE_STRIPPING = YES;
 				DEVELOPMENT_TEAM = TTY35UM57S;
-				ENABLE_APP_SANDBOX = YES;
+				ENABLE_APP_SANDBOX = NO;
 				ENABLE_HARDENED_RUNTIME = YES;
 				ENABLE_INCOMING_NETWORK_CONNECTIONS = YES;
 				ENABLE_OUTGOING_NETWORK_CONNECTIONS = YES;
@@ -593,7 +839,6 @@
 				ENABLE_RESOURCE_ACCESS_PHOTO_LIBRARY = NO;
 				ENABLE_RESOURCE_ACCESS_PRINTING = NO;
 				ENABLE_RESOURCE_ACCESS_USB = NO;
-				ENABLE_USER_SELECTED_FILES = readwrite;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = App/Info.plist;
 				INFOPLIST_KEY_CFBundleDisplayName = iMCP;
@@ -601,24 +846,13 @@
 				INFOPLIST_KEY_LSUIElement = YES;
 				INFOPLIST_KEY_NSCalendarsFullAccessUsageDescription = "iMCP needs access to provide event information to the MCP server.";
 				INFOPLIST_KEY_NSCameraUsageDescription = "iMCP needs access to the camera to take pictures for the MCP server.";
+				INFOPLIST_KEY_NSAppleEventsUsageDescription = "iMCP needs to control Notes to provide note information to the MCP server.";
 				INFOPLIST_KEY_NSContactsUsageDescription = "iMCP needs access to provide contact information to the MCP server.";
+				INFOPLIST_KEY_NSPhotoLibraryUsageDescription = "iMCP needs access to provide photo information to the MCP server.";
 				INFOPLIST_KEY_NSHumanReadableCopyright = "© 2026 dododo, LLC. All rights reserved.";
 				INFOPLIST_KEY_NSLocalNetworkUsageDescription = "iMCP uses the local network to connect to the MCP server.";
-				INFOPLIST_KEY_NSLocationAlwaysAndWhenInUseUsageDescription = "iMCP needs access to provide location information to the MCP server.";
-				INFOPLIST_KEY_NSLocationWhenInUseUsageDescription = "iMCP needs access to provide location information to the MCP server.";
 				INFOPLIST_KEY_NSMicrophoneUsageDescription = "iMCP needs access to the microphone to record audio for the MCP server.";
 				INFOPLIST_KEY_NSRemindersFullAccessUsageDescription = "iMCP needs access to provide reminders information to the MCP server.";
-				"INFOPLIST_KEY_UIApplicationSceneManifest_Generation[sdk=iphoneos*]" = YES;
-				"INFOPLIST_KEY_UIApplicationSceneManifest_Generation[sdk=iphonesimulator*]" = YES;
-				"INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents[sdk=iphoneos*]" = YES;
-				"INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents[sdk=iphonesimulator*]" = YES;
-				"INFOPLIST_KEY_UILaunchScreen_Generation[sdk=iphoneos*]" = YES;
-				"INFOPLIST_KEY_UILaunchScreen_Generation[sdk=iphonesimulator*]" = YES;
-				"INFOPLIST_KEY_UIStatusBarStyle[sdk=iphoneos*]" = UIStatusBarStyleDefault;
-				"INFOPLIST_KEY_UIStatusBarStyle[sdk=iphonesimulator*]" = UIStatusBarStyleDefault;
-				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPad = "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
-				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPhone = "UIInterfaceOrientationPortrait UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
-				IPHONEOS_DEPLOYMENT_TARGET = 18.2;
 				LD_RUNPATH_SEARCH_PATHS = "@executable_path/Frameworks";
 				"LD_RUNPATH_SEARCH_PATHS[sdk=macosx*]" = "@executable_path/../Frameworks";
 				MACOSX_DEPLOYMENT_TARGET = 15.1;
@@ -632,17 +866,16 @@
 				SWIFT_ACTIVE_COMPILATION_CONDITIONS = "WEATHERKIT_AVAILABLE $(inherited)";
 				SWIFT_EMIT_LOC_STRINGS = YES;
 				SWIFT_VERSION = 5.0;
-				XROS_DEPLOYMENT_TARGET = 2.2;
 			};
 			name = Release;
 		};
 		F8F44EBB2D5908D00075D79C /* Debug */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
-				"CODE_SIGN_IDENTITY[sdk=macosx*]" = "-";
+				"CODE_SIGN_IDENTITY[sdk=macosx*]" = "Apple Development";
 				CODE_SIGN_STYLE = Automatic;
 				DEAD_CODE_STRIPPING = YES;
-				DEVELOPMENT_TEAM = R7AYS6Z734;
+				DEVELOPMENT_TEAM = HJF7LN64XX;
 				MACOSX_DEPLOYMENT_TARGET = 15.1;
 				PRODUCT_BUNDLE_IDENTIFIER = "com.loopwork.imcp-server";
 				PRODUCT_NAME = "$(TARGET_NAME)";
@@ -673,6 +906,24 @@
 /* End XCBuildConfiguration section */
 
 /* Begin XCConfigurationList section */
+		B0AA000D000000000000000D /* Build configuration list for PBXNativeTarget "iMCPAlwaysOn" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				B0AA00100000000000000010 /* Debug */,
+				B0AA00110000000000000011 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		A014000B2E0000000000000B /* Build configuration list for PBXNativeTarget "iMCPTests" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				A01400092E00000000000009 /* Debug */,
+				A014000A2E0000000000000A /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
 		420FB1A6748E0C4FEF3CC576 /* Build configuration list for PBXNativeTarget "imcp-serverTests" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
@@ -711,13 +962,20 @@
 		};
 /* End XCConfigurationList section */
 
+/* Begin XCLocalSwiftPackageReference section */
+		B0SRP0020000000000000002 /* XCLocalSwiftPackageReference "Packages/SRP" */ = {
+			isa = XCLocalSwiftPackageReference;
+			relativePath = Packages/SRP;
+		};
+/* End XCLocalSwiftPackageReference section */
+
 /* Begin XCRemoteSwiftPackageReference section */
 		F809556C2D7888920055B911 /* XCRemoteSwiftPackageReference "madrid" */ = {
 			isa = XCRemoteSwiftPackageReference;
-			repositoryURL = "https://github.com/loopwork-ai/madrid";
+			repositoryURL = "https://github.com/mattt/Madrid";
 			requirement = {
 				kind = upToNextMajorVersion;
-				minimumVersion = 0.1.0;
+				minimumVersion = 0.5.0;
 			};
 		};
 		F825BDBD2D9AD00E0063ADD7 /* XCRemoteSwiftPackageReference "swift-service-lifecycle" */ = {
@@ -730,10 +988,10 @@
 		};
 		F873F48B2D712BCF0035CD0A /* XCRemoteSwiftPackageReference "Ontology" */ = {
 			isa = XCRemoteSwiftPackageReference;
-			repositoryURL = "https://github.com/loopwork-ai/Ontology";
+			repositoryURL = "https://github.com/mattt/Ontology";
 			requirement = {
 				kind = upToNextMajorVersion;
-				minimumVersion = 0.8.0;
+				minimumVersion = 0.10.0;
 			};
 		};
 		F87796FA2E0764AE00328CC6 /* XCRemoteSwiftPackageReference "MenuBarExtraAccess" */ = {
@@ -771,6 +1029,10 @@
 /* End XCRemoteSwiftPackageReference section */
 
 /* Begin XCSwiftPackageProductDependency section */
+		B0SRP0010000000000000001 /* SRP */ = {
+			isa = XCSwiftPackageProductDependency;
+			productName = SRP;
+		};
 		1CD6B9E157EEC273F178543D /* ServiceLifecycleTestKit */ = {
 			isa = XCSwiftPackageProductDependency;
 			package = F825BDBD2D9AD00E0063ADD7 /* XCRemoteSwiftPackageReference "swift-service-lifecycle" */;
@@ -786,11 +1048,6 @@
 			package = F825BDBD2D9AD00E0063ADD7 /* XCRemoteSwiftPackageReference "swift-service-lifecycle" */;
 			productName = ServiceLifecycle;
 		};
-		F809556D2D7888920055B911 /* TypedStream */ = {
-			isa = XCSwiftPackageProductDependency;
-			package = F809556C2D7888920055B911 /* XCRemoteSwiftPackageReference "madrid" */;
-			productName = TypedStream;
-		};
 		F809556F2D7888920055B911 /* iMessage */ = {
 			isa = XCSwiftPackageProductDependency;
 			package = F809556C2D7888920055B911 /* XCRemoteSwiftPackageReference "madrid" */;
@@ -800,11 +1057,6 @@
 			isa = XCSwiftPackageProductDependency;
 			package = F825BDBD2D9AD00E0063ADD7 /* XCRemoteSwiftPackageReference "swift-service-lifecycle" */;
 			productName = ServiceLifecycle;
-		};
-		F825BDC02D9AD00E0063ADD7 /* UnixSignals */ = {
-			isa = XCSwiftPackageProductDependency;
-			package = F825BDBD2D9AD00E0063ADD7 /* XCRemoteSwiftPackageReference "swift-service-lifecycle" */;
-			productName = UnixSignals;
 		};
 		F873F48C2D712BCF0035CD0A /* Ontology */ = {
 			isa = XCSwiftPackageProductDependency;
@@ -821,15 +1073,7 @@
 			package = F88358352D64A085000317CD /* XCRemoteSwiftPackageReference "swift-log" */;
 			productName = Logging;
 		};
-		F8A7DE3D2DCB76F700530587 /* MCP */ = {
-			isa = XCSwiftPackageProductDependency;
-			productName = MCP;
-		};
 		F8CE997A2D591CF200C61CA2 /* MCP */ = {
-			isa = XCSwiftPackageProductDependency;
-			productName = MCP;
-		};
-		F8D7C3162DCBD30500A4775F /* MCP */ = {
 			isa = XCSwiftPackageProductDependency;
 			productName = MCP;
 		};
@@ -838,14 +1082,15 @@
 			package = F8D7C3182DCBD32100A4775F /* XCRemoteSwiftPackageReference "swift-sdk" */;
 			productName = MCP;
 		};
+		B0CAFE060000000000000006 /* MCP */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = F8D7C3182DCBD32100A4775F /* XCRemoteSwiftPackageReference "swift-sdk" */;
+			productName = MCP;
+		};
 		F8D8C48D2DCE0E6800369E5C /* JSONSchema */ = {
 			isa = XCSwiftPackageProductDependency;
 			package = F8D8C48C2DCE0E6800369E5C /* XCRemoteSwiftPackageReference "JSONSchema" */;
 			productName = JSONSchema;
-		};
-		F8F44E9C2D5903F70075D79C /* MCP */ = {
-			isa = XCSwiftPackageProductDependency;
-			productName = MCP;
 		};
 /* End XCSwiftPackageProductDependency section */
 	};

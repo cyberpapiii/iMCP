@@ -1,34 +1,43 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-APP_NAME="${APP_NAME:-iMCP}"
-APP_BUNDLE="${APP_BUNDLE:-${APP_NAME}.app}"
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+APP_BUNDLE="${APP_BUNDLE:-}"
+if [[ -n "${APP_BUNDLE}" && "${APP_BUNDLE}" != /* ]]; then
+  APP_BUNDLE="${PWD}/${APP_BUNDLE}"
+fi
+cd "${SCRIPT_DIR}/.."
+
+APP_NAME="iMCP"
+SCHEME="iMCP"
+CONFIGURATION="Release"
+DESTINATION="platform=macOS"
+PROJECT_FILE="iMCP.xcodeproj/project.pbxproj"
+DIST_DIR="dist"
+ARCHIVE_PATH="${DIST_DIR}/${APP_NAME}.xcarchive"
+EXPORT_DIR="${DIST_DIR}/export"
+EXPORT_OPTIONS_PLIST="${DIST_DIR}/export-options.plist"
 KEYCHAIN_PROFILE="${KEYCHAIN_PROFILE:-}"
 VERSION="${VERSION:-}"
 BUILD_NUMBER="${BUILD_NUMBER:-}"
-SCHEME="${SCHEME:-iMCP}"
-CONFIGURATION="${CONFIGURATION:-Release}"
-DESTINATION="${DESTINATION:-platform=macOS}"
-PROJECT_FILE="${PROJECT_FILE:-${APP_NAME}.xcodeproj/project.pbxproj}"
-DIST_DIR="${DIST_DIR:-dist}"
-ARCHIVE_PATH="${ARCHIVE_PATH:-${DIST_DIR}/${APP_NAME}.xcarchive}"
-EXPORT_DIR="${EXPORT_DIR:-${DIST_DIR}/export}"
-EXPORT_OPTIONS_PLIST="${EXPORT_OPTIONS_PLIST:-${DIST_DIR}/export-options.plist}"
 TEAM_ID="${TEAM_ID:-}"
 SIGNING_CERTIFICATE="${SIGNING_CERTIFICATE:-Developer ID Application}"
-BUNDLE_ID="${BUNDLE_ID:-}"
 PROVISIONING_PROFILE_NAME="${PROVISIONING_PROFILE_NAME:-}"
 PROVISIONING_PROFILE_UUID="${PROVISIONING_PROFILE_UUID:-}"
+BUILD_SETTINGS=""
+BUNDLE_ID=""
 
-# Derived artifact names for notarization/release steps.
 NOTARY_ZIP="${DIST_DIR}/${APP_NAME}-notarize.zip"
+RELEASE_REMOTE="${RELEASE_REMOTE:-origin}"
+RELEASE_REPO=""
 
 print_usage() {
   cat <<'EOF'
 Usage: Scripts/release.sh [command]
 
 Commands:
-  all         Build check, bump, archive, export, package, notarize, staple, commit/tag, release, upload (default)
+  publish     Build, notarize, tag, create release, upload. HEAD must be the
+              remote's main; safe to re-run after a failure
   check       Quick release build check
   bump        Bump version/build numbers
   archive     Create an Xcode archive for direct distribution
@@ -37,60 +46,62 @@ Commands:
   package     Create the release zip from the app bundle
   notarize    Submit the app bundle for notarization
   staple      Staple the notarization ticket to the app bundle
-  commit      Commit version bump and create release tag
+  push-tags   Push the release tag (prompts unless CONFIRM_PUSH_TAGS=1)
   release     Create a GitHub release (no assets)
   upload      Upload the release asset to GitHub
+  repo        Print the GitHub owner/name that tags and releases go to
+  preflight   Run clean-tree, bundle-id, and release-remote guards only
   help        Show this help
 
+Artifacts go to dist/ in the repository root, wherever this is run from.
+
 Environment:
-  APP_NAME          App name (default: iMCP)
-  APP_BUNDLE        App bundle path (default: ${APP_NAME}.app)
-  KEYCHAIN_PROFILE  Required for notarize
   VERSION           Required for bumping, commit, release, and upload
   BUILD_NUMBER      Optional; used when bumping build number
-  SCHEME            Xcode scheme for build check (default: iMCP)
-  CONFIGURATION     Build configuration for build check (default: Release)
-  DESTINATION       Build destination for build check (default: platform=macOS)
-  PROJECT_FILE      Xcode project file (default: ${APP_NAME}.xcodeproj/project.pbxproj)
-  DIST_DIR          Output directory for artifacts (default: dist)
-  ARCHIVE_PATH      Archive path (default: dist/${APP_NAME}.xcarchive)
-  EXPORT_DIR        Export path for the signed app (default: dist/export)
-  EXPORT_OPTIONS_PLIST Export options plist path (default: dist/export-options.plist)
+  KEYCHAIN_PROFILE  Required for notarize
+  RELEASE_REMOTE    Git remote for tags and releases (default: origin; upstream mattt/iMCP is refused)
+  CONFIRM_PUSH_TAGS Set to 1 to skip push-tags interactive prompt
+  APP_BUNDLE        App bundle for a step run on its own (default: the exported app)
   TEAM_ID           Team ID for Developer ID signing (optional)
   SIGNING_CERTIFICATE Signing certificate (default: Developer ID Application)
-  BUNDLE_ID         Bundle identifier for export profiles (optional)
   PROVISIONING_PROFILE_NAME Provisioning profile name for export (optional)
   PROVISIONING_PROFILE_UUID Provisioning profile UUID for export (optional)
 EOF
 }
 
-# If APP_BUNDLE isn't explicit, derive the built app path from Xcode settings.
-resolve_app_bundle() {
-  resolve_exported_app || true
-  if [[ -d "${APP_BUNDLE}" ]]; then
-    return 0
-  fi
-
-  local built_products_dir=""
-  local full_product_name=""
-
-  built_products_dir="$(xcodebuild -quiet -scheme "${SCHEME}" -configuration "${CONFIGURATION}" -destination "${DESTINATION}" -showBuildSettings | awk -F ' = ' '/BUILT_PRODUCTS_DIR/ {print $2; exit}')"
-  full_product_name="$(xcodebuild -quiet -scheme "${SCHEME}" -configuration "${CONFIGURATION}" -destination "${DESTINATION}" -showBuildSettings | awk -F ' = ' '/FULL_PRODUCT_NAME/ {print $2; exit}')"
-
-  if [[ -n "${built_products_dir}" && -n "${full_product_name}" ]]; then
-    local candidate="${built_products_dir}/${full_product_name}"
-    if [[ -d "${candidate}" ]]; then
-      APP_BUNDLE="${candidate}"
-    fi
+# Call as a plain command, not inside $(...), so the settings are read once.
+load_build_settings() {
+  if [[ -z "${BUILD_SETTINGS}" ]]; then
+    BUILD_SETTINGS="$(xcodebuild -quiet -scheme "${SCHEME}" -configuration "${CONFIGURATION}" -destination "${DESTINATION}" -showBuildSettings)"
   fi
 }
 
+# Prints one Release build setting of the app target. The scheme also builds
+# the CLI and the watchdog, whose settings follow the app's in the output.
+app_build_setting() {
+  printf '%s\n' "${BUILD_SETTINGS}" | awk -v name="$1" -v target="${APP_NAME}" '
+    /^Build settings for / { in_app = ($0 ~ ("target " target ":$")) }
+    in_app && $1 == name && $2 == "=" { sub(/^[^=]*= /, ""); print; exit }
+  '
+}
+
+resolve_built_app() {
+  load_build_settings
+  APP_BUNDLE="$(app_build_setting BUILT_PRODUCTS_DIR)/$(app_build_setting FULL_PRODUCT_NAME)"
+}
+
+# An explicit or already-resolved APP_BUNDLE wins; a step run on its own
+# (notarize, staple, package) falls back to the exported app.
 require_app_bundle() {
-  resolve_app_bundle
-  if [[ ! -d "${APP_BUNDLE}" ]]; then
-    echo "Missing app bundle: ${APP_BUNDLE}" >&2
+  if [[ ! -d "${APP_BUNDLE}" ]] && ! resolve_exported_app; then
+    echo "Missing app bundle: ${APP_BUNDLE} (run export, or set APP_BUNDLE)" >&2
     exit 1
   fi
+}
+
+verify_app_signing() {
+  require_app_bundle
+  "${SCRIPT_DIR}/verify-app-signing.sh" "${APP_BUNDLE}"
 }
 
 require_keychain_profile() {
@@ -112,6 +123,10 @@ require_clean_tree() {
     echo "Working tree is dirty. Commit or stash changes first." >&2
     exit 1
   fi
+  if [[ -n "$(git ls-files --others --exclude-standard)" ]]; then
+    echo "Working tree has untracked files. Commit, stash, or remove them first." >&2
+    exit 1
+  fi
 }
 
 ensure_dist_dir() {
@@ -119,20 +134,11 @@ ensure_dist_dir() {
 }
 
 resolve_bundle_id() {
-  if [[ -n "${BUNDLE_ID}" ]]; then
-    return 0
+  if [[ -z "${BUNDLE_ID}" ]]; then
+    load_build_settings
+    BUNDLE_ID="$(app_build_setting PRODUCT_BUNDLE_IDENTIFIER)"
   fi
-  if [[ ! -f "${PROJECT_FILE}" ]]; then
-    return 1
-  fi
-  while IFS= read -r line; do
-    if [[ "${line}" == *"PRODUCT_BUNDLE_IDENTIFIER ="* && "${line}" != *"imcp-server"* ]]; then
-      BUNDLE_ID="${line#*PRODUCT_BUNDLE_IDENTIFIER = }"
-      BUNDLE_ID="${BUNDLE_ID%;}"
-      return 0
-    fi
-  done < "${PROJECT_FILE}"
-  return 1
+  [[ -n "${BUNDLE_ID}" ]]
 }
 
 list_profiles() {
@@ -221,7 +227,6 @@ bump_version() {
   fi
   local resolved_build_number="${BUILD_NUMBER}"
   if [[ -z "${resolved_build_number}" ]]; then
-    # Find the current build number and increment it if not provided.
     resolved_build_number="0"
     while IFS= read -r line; do
       if [[ "${line}" =~ CURRENT_PROJECT_VERSION\ =\ ([0-9]+)\; ]]; then
@@ -234,7 +239,6 @@ bump_version() {
 
   echo "Setting MARKETING_VERSION to ${VERSION}"
   echo "Setting CURRENT_PROJECT_VERSION to ${resolved_build_number}"
-  # Replace both version fields in the project file without agvtool.
   local tmp_file
   tmp_file="$(mktemp)"
   while IFS= read -r line; do
@@ -260,7 +264,8 @@ build_zip() {
 build_check() {
   echo "Checking release build (scheme: ${SCHEME}, configuration: ${CONFIGURATION})"
   xcodebuild -quiet -scheme "${SCHEME}" -configuration "${CONFIGURATION}" -destination "${DESTINATION}" build
-  resolve_app_bundle
+  resolve_built_app
+  verify_app_signing
 }
 
 archive_app() {
@@ -293,7 +298,7 @@ EOF
   fi
   if [[ -n "${profile_value}" ]]; then
     if ! resolve_bundle_id; then
-      echo "BUNDLE_ID is required when using provisioning profiles." >&2
+      echo "error: could not read the app's PRODUCT_BUNDLE_IDENTIFIER for the provisioning profile" >&2
       exit 1
     fi
     cat >> "${tmp_file}" <<EOF
@@ -321,7 +326,11 @@ export_app() {
   write_export_options
   echo "Exporting Developer ID app to ${EXPORT_DIR}"
   xcodebuild -quiet -exportArchive -archivePath "${ARCHIVE_PATH}" -exportPath "${EXPORT_DIR}" -exportOptionsPlist "${EXPORT_OPTIONS_PLIST}"
-  resolve_app_bundle
+  if ! resolve_exported_app; then
+    echo "error: export produced no app in ${EXPORT_DIR}" >&2
+    exit 1
+  fi
+  verify_app_signing
 }
 
 notarize() {
@@ -342,10 +351,10 @@ staple() {
 
 package_release() {
   require_app_bundle
+  verify_app_signing
   local release_zip_path
   release_zip_path="$(release_zip)"
   build_zip "${APP_BUNDLE}" "${release_zip_path}"
-  shasum -a 256 "${release_zip_path}" > "${release_zip_path}.sha256"
   echo "Done: ${release_zip_path}"
 }
 
@@ -355,54 +364,91 @@ validate_staple() {
   xcrun stapler validate "${APP_BUNDLE}"
 }
 
-commit_and_tag() {
+# A tag already at HEAD is an earlier publish of this same commit, to resume.
+require_tag_free_or_at_head() {
+  local tagged
+  tagged="$(git rev-parse --verify --quiet "refs/tags/${VERSION}^{commit}" || true)"
+  if [[ -n "${tagged}" && "${tagged}" != "$(git rev-parse HEAD)" ]]; then
+    echo "error: tag ${VERSION} already exists on another commit (${tagged})" >&2
+    exit 1
+  fi
+}
+
+tag_current_commit() {
   require_version
+  require_clean_tree
   local release_zip_path
   release_zip_path="$(release_zip)"
   if [[ ! -f "${release_zip_path}" ]]; then
     echo "Missing release asset: ${release_zip_path}" >&2
     exit 1
   fi
-  # Ensure the stapled build exists before tagging a release.
   validate_staple
-  if git rev-parse --verify "refs/tags/${VERSION}" >/dev/null 2>&1; then
-    echo "Tag already exists: ${VERSION}" >&2
-    exit 1
+  require_tag_free_or_at_head
+  if git rev-parse --verify --quiet "refs/tags/${VERSION}" >/dev/null; then
+    echo "Tag ${VERSION} already points at HEAD; resuming"
+    return 0
   fi
-  echo "Committing version bump"
-  git add -A
-  if git diff --cached --quiet; then
-    echo "No changes to commit."
-  else
-    git commit -m "Release ${VERSION}"
-  fi
-  echo "Tagging release ${VERSION}"
+  echo "Tagging current commit as ${VERSION}"
   git tag -a "${VERSION}" -m "Release ${VERSION}"
 }
 
 push_tags() {
   require_version
+  resolve_release_repo
   if ! git rev-parse --verify "refs/tags/${VERSION}" >/dev/null 2>&1; then
     echo "Missing tag: ${VERSION}" >&2
     exit 1
   fi
-  local response=""
-  read -r -p "Push tags to origin? [y/N] " response
-  if [[ "${response}" != "y" && "${response}" != "Y" ]]; then
-    echo "Tag push cancelled."
+  if [[ "${CONFIRM_PUSH_TAGS:-}" != "1" ]]; then
+    local response=""
+    read -r -p "Push tag ${VERSION} to ${RELEASE_REPO}? [y/N] " response
+    if [[ "${response}" != "y" && "${response}" != "Y" ]]; then
+      echo "Tag push cancelled."
+      exit 1
+    fi
+  fi
+  git push "${RELEASE_REMOTE}" "refs/tags/${VERSION}"
+}
+
+# Sets RELEASE_REPO to the owner/name behind RELEASE_REMOTE. Call it as a plain
+# command, never inside $(...): `exit` in a command substitution ends only the
+# subshell, which is how an upstream origin once printed an error and published
+# anyway.
+resolve_release_repo() {
+  local url
+  url="$(git remote get-url "${RELEASE_REMOTE}")"
+  if [[ "${url}" != *github.com[:/]* ]]; then
+    echo "error: ${RELEASE_REMOTE} is not a GitHub remote: ${url}" >&2
     exit 1
   fi
-  git push --tags
+  RELEASE_REPO="${url#*github.com[:/]}"
+  RELEASE_REPO="${RELEASE_REPO%.git}"
+  if [[ "$(printf '%s' "${RELEASE_REPO}" | tr '[:upper:]' '[:lower:]')" == "mattt/imcp" ]]; then
+    echo "error: ${RELEASE_REMOTE} is upstream mattt/iMCP, which never receives tags or releases; set RELEASE_REMOTE to your fork's remote" >&2
+    exit 1
+  fi
+}
+
+print_release_repo() {
+  resolve_release_repo
+  printf '%s\n' "${RELEASE_REPO}"
 }
 
 create_release() {
   require_version
-  echo "Creating GitHub release ${VERSION}"
-  gh release create "${VERSION}" --generate-notes
+  resolve_release_repo
+  if gh release view "${VERSION}" -R "${RELEASE_REPO}" >/dev/null 2>&1; then
+    echo "GitHub release ${VERSION} already exists; resuming"
+    return 0
+  fi
+  echo "Creating GitHub release ${VERSION} on ${RELEASE_REPO}"
+  gh release create "${VERSION}" -R "${RELEASE_REPO}" --verify-tag --generate-notes
 }
 
 upload_asset() {
   require_version
+  resolve_release_repo
   local release_zip_path
   release_zip_path="$(release_zip)"
   if [[ ! -f "${release_zip_path}" ]]; then
@@ -414,38 +460,50 @@ upload_asset() {
     cp -f "${release_zip_path}" "${upload_path}"
   fi
   echo "Uploading release asset ${upload_path}"
-  gh release upload "${VERSION}" "${upload_path}" --clobber
-  gh release view --web "${VERSION}"
+  # --clobber so a resumed publish can replace a partial upload.
+  gh release upload "${VERSION}" "${upload_path}" -R "${RELEASE_REPO}" --clobber
 }
 
-all() {
-  # Full release flow with strict gating at each step.
-  build_check
+publish() {
+  # Version bump must already be merged. This keeps public releases attached to
+  # reviewed main instead of a local release-only commit.
+  require_version
   require_clean_tree
-  bump_version
+  resolve_release_repo
+  git fetch "${RELEASE_REMOTE}" main
+  if [[ "$(git rev-parse HEAD)" != "$(git rev-parse FETCH_HEAD)" ]]; then
+    echo "error: HEAD is not ${RELEASE_REMOTE}/main; publish only the merged commit" >&2
+    exit 1
+  fi
+  require_tag_free_or_at_head
+  build_check
   archive_app
   export_app
-  package_release
   notarize
   staple
-  commit_and_tag
-  push_tags
+  package_release
+  tag_current_commit
+  CONFIRM_PUSH_TAGS=1 push_tags
   create_release
   upload_asset
 }
 
-release() {
-  create_release
+preflight() {
+  require_clean_tree
+  if ! resolve_bundle_id; then
+    echo "error: could not read the app's PRODUCT_BUNDLE_IDENTIFIER" >&2
+    exit 1
+  fi
+  echo "BUNDLE_ID=${BUNDLE_ID}"
+  resolve_release_repo
+  echo "RELEASE_REPO=${RELEASE_REPO}"
+  echo "preflight ok"
 }
 
-upload() {
-  upload_asset
-}
-
-COMMAND="${1:-all}"
+COMMAND="${1:-help}"
 case "${COMMAND}" in
-  all)
-    all
+  publish)
+    publish
     ;;
   check)
     build_check
@@ -471,17 +529,20 @@ case "${COMMAND}" in
   staple)
     staple
     ;;
-  commit)
-    commit_and_tag
-    ;;
   push-tags)
     push_tags
     ;;
   release)
-    release
+    create_release
     ;;
   upload)
-    upload
+    upload_asset
+    ;;
+  repo)
+    print_release_repo
+    ;;
+  preflight)
+    preflight
     ;;
   help|-h|--help)
     print_usage

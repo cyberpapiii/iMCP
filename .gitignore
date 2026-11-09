@@ -4,6 +4,7 @@
 
 ## User settings
 xcuserdata/
+.DS_Store
 
 ## Obj-C/Swift specific
 *.hmap
@@ -33,3 +34,16 @@ playground.xcworkspace
 
 # Release artifacts
 dist/
+
+# Compound Engineering local config
+.compound-engineering/*.local.yaml
+*.profraw
+
+# Local agent / tooling state
+Scripts/*.local.sh
+.claude/
+.codex/
+.hermes
+.audit/
+
+.context/compound-engineering/

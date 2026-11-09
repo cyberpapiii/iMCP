@@ -1,23 +1,65 @@
 import Foundation
-import JSONSchema
 import OSLog
 
 private let log = Logger.service("shortcuts")
+
+final class PipeBuffer: @unchecked Sendable {
+    private let lock = NSLock()
+    private var data = Data()
+
+    func append(_ newData: Data) {
+        lock.withLock {
+            data.append(newData)
+        }
+    }
+
+    func value() -> Data {
+        lock.withLock { data }
+    }
+}
+
+/// Collects a pipe's output as it arrives. A child that writes more than a
+/// pipe holds (about 64 KB) blocks until someone reads, so reading only
+/// after exit can hang it forever.
+func drain(_ pipe: Pipe) -> PipeBuffer {
+    let buffer = PipeBuffer()
+    pipe.fileHandleForReading.readabilityHandler = { handle in
+        let data = handle.availableData
+        if !data.isEmpty {
+            buffer.append(data)
+        }
+    }
+    return buffer
+}
+
+/// The shortcut has already run by the time this is read, so nothing here
+/// may throw: a missing file means no output, and bytes that are not UTF-8
+/// are kept with replacement characters rather than reported as a failure.
+func shortcutOutputText(at url: URL) -> String? {
+    (try? Data(contentsOf: url)).map { String(decoding: $0, as: UTF8.self) }
+}
 
 final class ShortcutsService: Service {
     static let shared = ShortcutsService()
 
     private let shortcutsPath = "/usr/bin/shortcuts"
     private let executionTimeout: Duration = .seconds(300)
+    private let listTimeout: Duration = .seconds(60)
+
+    private static let name = ToolArgument.required(
+        "name",
+        description: "Exact name of the shortcut, as listed by shortcuts_list"
+    )
+    private static let input = ToolArgument.string(
+        "input",
+        description: "Text passed to the shortcut as its input"
+    )
 
     var tools: [Tool] {
         Tool(
             name: "shortcuts_list",
-            description: "List all available shortcuts on this Mac",
-            inputSchema: .object(
-                properties: [:],
-                additionalProperties: false
-            ),
+            description: "List the names of every shortcut installed on this Mac",
+            arguments: [],
             annotations: .init(
                 title: "List Shortcuts",
                 readOnlyHint: true,
@@ -29,92 +71,86 @@ final class ShortcutsService: Service {
 
         Tool(
             name: "shortcuts_run",
-            description: "Run a shortcut by name, optionally with text input",
-            inputSchema: .object(
-                properties: [
-                    "name": .string(
-                        description: "The name of the shortcut to run"
-                    ),
-                    "input": .string(
-                        description: "Optional text input to pass to the shortcut"
-                    ),
-                ],
-                required: ["name"],
-                additionalProperties: false
-            ),
+            description:
+                "Run a shortcut by name and return its text output. Fails if the shortcut runs longer than \(executionTimeout.components.seconds / 60) minutes.",
+            arguments: [Self.name, Self.input],
             annotations: .init(
                 title: "Run Shortcut",
+                readOnlyHint: false,
                 destructiveHint: true,
                 openWorldHint: true
             )
         ) { arguments in
-            guard case let .string(name) = arguments["name"] else {
-                throw NSError(
-                    domain: "ShortcutsError",
-                    code: 1,
-                    userInfo: [NSLocalizedDescriptionKey: "Shortcut name is required"]
-                )
-            }
-
-            let input = arguments["input"]?.stringValue
-
-            return try await self.runShortcut(name: name, input: input)
+            try await self.runShortcut(name: try Self.name(arguments), input: try Self.input(arguments))
         }
     }
 
-    // MARK: - Private Implementation
-
-    private func runProcess(_ process: Process) async throws {
-        try process.run()
-        await withCheckedContinuation { continuation in
-            process.terminationHandler = { _ in
-                continuation.resume()
-            }
-        }
-    }
-
-    private func listShortcuts() async throws -> Value {
+    /// `subject` names the run in the log and in the failure a client reads.
+    private func shortcuts(
+        _ arguments: [String],
+        subject: String,
+        within limit: Duration,
+        timeoutError: ToolFailure
+    ) async throws -> Data {
         let process = Process()
         process.executableURL = URL(fileURLWithPath: shortcutsPath)
-        process.arguments = ["list"]
+        process.arguments = arguments
 
         let outputPipe = Pipe()
         let errorPipe = Pipe()
         process.standardOutput = outputPipe
         process.standardError = errorPipe
-
-        let outputHandle = outputPipe.fileHandleForReading
-        let errorHandle = errorPipe.fileHandleForReading
+        let outputBuffer = drain(outputPipe)
+        let errorBuffer = drain(errorPipe)
         defer {
-            outputHandle.closeFile()
-            errorHandle.closeFile()
+            for handle in [outputPipe.fileHandleForReading, errorPipe.fileHandleForReading] {
+                handle.readabilityHandler = nil
+                handle.closeFile()
+            }
         }
+        let stderr = { String(data: errorBuffer.value(), encoding: .utf8) ?? "Unknown error" }
 
         do {
-            try await runProcess(process)
+            try await withDeadline(
+                limit,
+                throwing: timeoutError,
+                onTimeout: {
+                    if process.isRunning { process.terminate() }
+                }
+            ) { report in
+                process.terminationHandler = { _ in report(.success(())) }
+                do {
+                    try process.run()
+                } catch {
+                    report(.failure(error))
+                    return
+                }
+                if !process.isRunning {
+                    report(.success(()))
+                }
+            }
         } catch {
-            log.error("Failed to run shortcuts command: \(error.localizedDescription)")
-            throw NSError(
-                domain: "ShortcutsError",
-                code: 2,
-                userInfo: [
-                    NSLocalizedDescriptionKey: "Failed to run shortcuts command: \(error.localizedDescription)"
-                ]
-            )
+            if !errorBuffer.value().isEmpty {
+                log.error("\(subject) stderr: \(stderr())")
+            }
+            log.error("Failed to run \(subject): \(error.localizedDescription)")
+            throw error
         }
-
-        let outputData = (try? outputHandle.readToEnd()) ?? Data()
-        let errorData = (try? errorHandle.readToEnd()) ?? Data()
 
         guard process.terminationStatus == 0 else {
-            let errorMessage = String(data: errorData, encoding: .utf8) ?? "Unknown error"
-            log.error("shortcuts list failed: \(errorMessage)")
-            throw NSError(
-                domain: "ShortcutsError",
-                code: 3,
-                userInfo: [NSLocalizedDescriptionKey: "shortcuts list failed: \(errorMessage)"]
-            )
+            log.error("\(subject) failed: \(stderr())")
+            throw ToolFailure("\(subject) failed. See iMCP logs for details.")
         }
+        return outputBuffer.value()
+    }
+
+    private func listShortcuts() async throws -> Value {
+        let outputData = try await shortcuts(
+            ["list"],
+            subject: "shortcuts list",
+            within: listTimeout,
+            timeoutError: ToolFailure("shortcuts list timed out after \(listTimeout.components.seconds) seconds")
+        )
 
         guard let output = String(data: outputData, encoding: .utf8) else {
             return .array([])
@@ -132,7 +168,11 @@ final class ShortcutsService: Service {
     }
 
     private func runShortcut(name: String, input: String?) async throws -> Value {
-        log.info("Running shortcut: \(name, privacy: .public)")
+        log.info("Running shortcut: \(name)")
+
+        guard !name.hasPrefix("-") else {
+            throw ToolInputError("Shortcut name must not start with -")
+        }
 
         let tempDir = FileManager.default.temporaryDirectory
         let outputFileURL = tempDir.appendingPathComponent("shortcut_output_\(UUID().uuidString).txt")
@@ -154,71 +194,18 @@ final class ShortcutsService: Service {
             try? FileManager.default.removeItem(at: outputFileURL)
         }
 
-        let process = Process()
-        process.executableURL = URL(fileURLWithPath: shortcutsPath)
-        process.arguments = arguments
-
-        let errorPipe = Pipe()
-        process.standardError = errorPipe
-        let errorHandle = errorPipe.fileHandleForReading
-        defer { errorHandle.closeFile() }
-
-        var errorData = Data()
-        do {
-            try await withThrowingTaskGroup(of: Void.self) { group in
-                group.addTask {
-                    try await self.runProcess(process)
-                }
-
-                group.addTask {
-                    try await Task.sleep(for: self.executionTimeout)
-                    process.terminate()
-                    throw NSError(
-                        domain: "ShortcutsError",
-                        code: 6,
-                        userInfo: [
-                            NSLocalizedDescriptionKey:
-                                "Shortcut '\(name)' timed out after 5 minutes"
-                        ]
-                    )
-                }
-
-                _ = try await group.next()
-                group.cancelAll()
-            }
-        } catch {
-            if process.isRunning {
-                process.terminate()
-            }
-            errorData = (try? errorHandle.readToEnd()) ?? Data()
-            if !errorData.isEmpty {
-                let stderrMessage = String(data: errorData, encoding: .utf8) ?? "Unknown error"
-                log.error("Shortcut '\(name, privacy: .public)' stderr: \(stderrMessage, privacy: .public)")
-            }
-            log.error("Failed to run shortcut '\(name, privacy: .public)': \(error.localizedDescription)")
-            throw error
-        }
-
-        if errorData.isEmpty {
-            errorData = (try? errorHandle.readToEnd()) ?? Data()
-        }
-
-        guard process.terminationStatus == 0 else {
-            let errorMessage = String(data: errorData, encoding: .utf8) ?? "Unknown error"
-            log.error("Shortcut '\(name, privacy: .public)' failed: \(errorMessage)")
-            throw NSError(
-                domain: "ShortcutsError",
-                code: 5,
-                userInfo: [NSLocalizedDescriptionKey: "Shortcut '\(name)' failed: \(errorMessage)"]
+        _ = try await shortcuts(
+            arguments,
+            subject: "Shortcut '\(name)'",
+            within: executionTimeout,
+            timeoutError: ToolFailure(
+                "Shortcut '\(name)' timed out after \(executionTimeout.components.seconds / 60) minutes"
             )
-        }
+        )
 
-        var output: String?
-        if FileManager.default.fileExists(atPath: outputFileURL.path) {
-            output = try? String(contentsOf: outputFileURL, encoding: .utf8)
-        }
+        let output = shortcutOutputText(at: outputFileURL)
 
-        log.info("Shortcut '\(name, privacy: .public)' completed successfully")
+        log.info("Shortcut '\(name)' completed successfully")
 
         if let output = output, !output.isEmpty {
             return .object([

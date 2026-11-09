@@ -1,0 +1,350 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Ideation: Next iMCP directions</title>
+  <style>
+    :root {
+      --bg: #f6f4ef;
+      --ink: #1c1a16;
+      --muted: #5c574e;
+      --card: #fffdf8;
+      --line: #d9d3c6;
+      --accent: #2f5d50;
+      --accent-soft: #e4efe9;
+      --warn-soft: #f4ebe0;
+      --info-soft: #e8eef4;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      background: var(--bg);
+      color: var(--ink);
+      font: 16px/1.5 "Iowan Old Style", "Palatino Linotype", Palatino, Georgia, serif;
+    }
+    strong { color: inherit; font-weight: 650; }
+    .wrap {
+      max-width: 920px;
+      margin: 0 auto;
+      padding: 2.5rem 1.5rem 4rem;
+    }
+    .prose { max-width: 70ch; }
+    header.meta {
+      border-bottom: 1px solid var(--line);
+      padding-bottom: 1.25rem;
+      margin-bottom: 2rem;
+    }
+    .eyebrow {
+      font-family: ui-sans-serif, system-ui, sans-serif;
+      font-size: 0.72rem;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      color: var(--accent);
+      margin: 0 0 0.4rem;
+    }
+    h1 { font-size: 1.85rem; line-height: 1.2; margin: 0 0 0.75rem; }
+    h2 { font-size: 1.35rem; margin: 2.2rem 0 0.8rem; }
+    h3 { font-size: 1.15rem; margin: 0 0 0.6rem; }
+    .meta-list {
+      display: grid;
+      grid-template-columns: max-content 1fr;
+      gap: 0.25rem 1rem;
+      font-family: ui-sans-serif, system-ui, sans-serif;
+      font-size: 0.88rem;
+    }
+    .meta-list dt { color: var(--muted); }
+    .meta-list dd { margin: 0; }
+    nav.toc {
+      background: var(--card);
+      border: 1px solid var(--line);
+      border-radius: 10px;
+      padding: 0.9rem 1.1rem;
+      margin: 1.4rem 0 2rem;
+      font-family: ui-sans-serif, system-ui, sans-serif;
+      font-size: 0.9rem;
+    }
+    nav.toc ol { margin: 0.4rem 0 0; padding-left: 1.2rem; }
+    a { color: var(--accent); }
+    section { margin-bottom: 2.4rem; }
+    article.idea {
+      background: var(--card);
+      border: 1px solid var(--line);
+      border-radius: 12px;
+      padding: 1.15rem 1.25rem 1.3rem;
+      margin: 1.1rem 0 1.6rem;
+    }
+    .chips { display: flex; flex-wrap: wrap; gap: 0.4rem; margin: 0 0 0.8rem; }
+    .chip {
+      font-family: ui-sans-serif, system-ui, sans-serif;
+      font-size: 0.75rem;
+      border-radius: 999px;
+      padding: 0.18rem 0.55rem;
+      background: var(--accent-soft);
+      color: var(--accent);
+    }
+    .chip.warn { background: var(--warn-soft); color: #6a4a24; }
+    .chip.info { background: var(--info-soft); color: #31445a; }
+    dl.fields { margin: 0.7rem 0 0; }
+    dl.fields dt {
+      font-family: ui-sans-serif, system-ui, sans-serif;
+      font-size: 0.72rem;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      color: var(--muted);
+      margin-top: 0.7rem;
+    }
+    dl.fields dd { margin: 0.2rem 0 0; }
+    figure.diagram {
+      margin: 1rem 0 0.3rem;
+      background: var(--bg);
+      border-radius: 8px;
+      padding: 0.6rem;
+    }
+    figcaption {
+      font-family: ui-sans-serif, system-ui, sans-serif;
+      font-size: 0.78rem;
+      color: var(--muted);
+      margin-top: 0.35rem;
+    }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 0.92rem;
+    }
+    th, td {
+      text-align: left;
+      vertical-align: top;
+      border-bottom: 1px solid var(--line);
+      padding: 0.45rem 0.4rem;
+    }
+    th { font-family: ui-sans-serif, system-ui, sans-serif; font-size: 0.78rem; color: var(--muted); }
+    footer.composition-signal {
+      margin-top: 2.5rem;
+      padding-top: 1rem;
+      border-top: 1px solid var(--line);
+      font-family: ui-sans-serif, system-ui, sans-serif;
+      font-size: 0.78rem;
+      color: var(--muted);
+    }
+    svg text { font-family: ui-sans-serif, system-ui, sans-serif; }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <header class="meta">
+      <p class="eyebrow">Ideation</p>
+      <h1>Ideation: Next iMCP directions</h1>
+      <dl class="meta-list">
+        <dt>Date</dt>
+        <dd><time datetime="2026-08-22">2026-08-22</time></dd>
+        <dt>Topic</dt>
+        <dd>open-ideation</dd>
+        <dt>Mode</dt>
+        <dd>repo-grounded</dd>
+        <dt>Focus</dt>
+        <dd>surprise me — no named subject</dd>
+      </dl>
+    </header>
+
+    <nav class="toc" aria-label="Document sections">
+      <strong>On this page</strong>
+      <ol>
+        <li><a href="#grounding-context">Grounding Context</a></li>
+        <li><a href="#topic-axes">Topic Axes</a></li>
+        <li><a href="#ranked-ideas">Ranked Ideas</a></li>
+        <li><a href="#rejection-summary">Rejection Summary</a></li>
+      </ol>
+    </nav>
+
+    <section id="grounding-context">
+      <h2>Grounding Context</h2>
+      <div class="prose">
+        <p>iMCP is a macOS menu-bar app that owns TCC and service toggles, plus a bundled <code>imcp-server</code> stdio proxy. The CLI prefers loopback via an owner-only listener-endpoint file (port + pid, signed-process check), then Bonjour. Pairing is a P-256 fingerprint and a one-way signed-nonce AUTH preamble. <code>PairedClient</code> stores only fingerprint, label, and addedAt. Gates are global service enablement plus connection approval. Enabling Messages publishes iMessage to every paired client. <code>ListResources</code> and <code>ListPrompts</code> return empty arrays. Write verbs are asymmetric. Plans 001–035 are done; the Aug 21 review-trust pass closed pairing persist, Team-ID pins, and honest MCP errors, and deferred status, Resources, scopes, and pairing-code transport.</p>
+        <p>The solutions store holds one convention: <code>AGENTS.md</code> is the only instruction body. Pairing, discovery, and FetchPolicy have no compounded docs. The 2026 field is crowded (MacRelay, AppleMCP, AirMCP, pointer-first macos-apps-mcp). Differentiation is moving to governance, pointer catalogs, and protocol surfaces (Resources, Tasks, MCP Apps) — not another Calendar fetch. Official Apple MCP is Xcode/Safari tooling, not personal data.</p>
+      </div>
+    </section>
+
+    <section id="topic-axes">
+      <h2>Topic Axes</h2>
+      <p class="prose">Decomposition skipped — surprise-me mode.</p>
+    </section>
+
+    <section id="ranked-ideas">
+      <h2>Ranked Ideas</h2>
+      <nav class="toc" aria-label="Ranked idea jump list">
+        <strong>Jump</strong>
+        <ol>
+          <li><a href="#idea-1">1. Grant instrument</a></li>
+          <li><a href="#idea-2">2. Two-world trust</a></li>
+          <li><a href="#idea-3">3. Reading-room catalog</a></li>
+          <li><a href="#idea-4">4. Mutual AUTH</a></li>
+          <li><a href="#idea-5">5. Dark-harbor notices</a></li>
+          <li><a href="#idea-6">6. Intent ledger</a></li>
+        </ol>
+      </nav>
+
+      <article class="idea" id="idea-1">
+        <h3>1. Grant instrument</h3>
+        <div class="chips">
+          <span class="chip">Conf 88%</span>
+          <span class="chip warn">Complexity Medium</span>
+        </div>
+        <p>Pairing answers “who is this binary.” It does not answer “what may this conversation read.” Keep <code>PairedClient</code> as identity. Mint a separate grant — prize list, term, and revocation — at approval or first dangerous write. Start with Messages: a session or a one-client house key, not a menu-bar switch that floods every roommate.</p>
+        <figure class="diagram" aria-hidden="true">
+          <svg viewBox="0 0 720 160" width="100%" height="160">
+            <rect x="20" y="40" width="200" height="80" rx="8" fill="#e4efe9" stroke="#2f5d50"/>
+            <text x="120" y="75" text-anchor="middle" font-size="14" fill="#1c1a16">PairedClient</text>
+            <text x="120" y="96" text-anchor="middle" font-size="12" fill="#2f5d50">who</text>
+            <rect x="260" y="40" width="200" height="80" rx="8" fill="#e8eef4" stroke="#31445a"/>
+            <text x="360" y="75" text-anchor="middle" font-size="14" fill="#1c1a16">Grant</text>
+            <text x="360" y="96" text-anchor="middle" font-size="12" fill="#31445a">what, how long</text>
+            <rect x="500" y="40" width="200" height="80" rx="8" fill="#f4ebe0" stroke="#6a4a24"/>
+            <text x="600" y="75" text-anchor="middle" font-size="14" fill="#1c1a16">Messages</text>
+            <text x="600" y="96" text-anchor="middle" font-size="12" fill="#6a4a24">first prize</text>
+            <path d="M220 80 H260" stroke="#5c574e" stroke-width="1.5" fill="none" marker-end="url(#arr)"/>
+            <path d="M460 80 H500" stroke="#5c574e" stroke-width="1.5" fill="none"/>
+            <defs><marker id="arr" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto"><path d="M0,0 L6,3 L0,6" fill="#5c574e"/></marker></defs>
+          </svg>
+          <figcaption>Identity stays a fingerprint. Authorization is a dated prize list. Messages is the first prize, not a global switch.</figcaption>
+        </figure>
+        <dl class="fields">
+          <dt>Basis</dt>
+          <dd><code>direct:</code> <code>PairedClient</code> is only fingerprint, label, addedAt. Approval copy says the client can use every enabled service. Messages is one <code>messagesEnabled</code> bit. <code>external:</code> AirMCP sells profiles and HITL into that gap.</dd>
+          <dt>Rationale</dt>
+          <dd>Without a grant object, every later governance idea (audit, HITL, iPhone confirm) has nowhere to live. With one, they share storage, UI, and tests. Messages is the service people leave off or overshare.</dd>
+          <dt>Downsides</dt>
+          <dd>Approval becomes a real product moment, not Allow/Deny. Existing paired clients need a migration default (likely “current global enablement, no Messages until re-granted”).</dd>
+        </dl>
+      </article>
+
+      <article class="idea" id="idea-2">
+        <h3>2. Two-world trust</h3>
+        <div class="chips">
+          <span class="chip">Conf 86%</span>
+          <span class="chip warn">Complexity Medium</span>
+        </div>
+        <p>Today the bundled CLI already proves the listener via a signed pid in the endpoint file, then still runs the same P-256 AUTH and pairing dialog as a LAN stranger. Split the worlds. Same-user signed <code>imcp-server</code> on loopback is local process identity. AUTH, pairing codes, and Bonjour are the remote product — an explicit “Allow LAN clients” door the GUI can be prompted for. Spawned stdio should fail immediately when the endpoint file is missing, not hang on Bonjour.</p>
+        <figure class="diagram" aria-hidden="true">
+          <svg viewBox="0 0 720 150" width="100%" height="150">
+            <rect x="24" y="28" width="320" height="96" rx="8" fill="#e4efe9" stroke="#2f5d50"/>
+            <text x="184" y="58" text-anchor="middle" font-size="14" fill="#1c1a16">Local</text>
+            <text x="184" y="82" text-anchor="middle" font-size="12" fill="#2f5d50">signed pid + loopback file</text>
+            <text x="184" y="102" text-anchor="middle" font-size="12" fill="#2f5d50">no pair dialog</text>
+            <rect x="376" y="28" width="320" height="96" rx="8" fill="#f4ebe0" stroke="#6a4a24"/>
+            <text x="536" y="58" text-anchor="middle" font-size="14" fill="#1c1a16">Remote</text>
+            <text x="536" y="82" text-anchor="middle" font-size="12" fill="#6a4a24">AUTH + pair + Bonjour</text>
+            <text x="536" y="102" text-anchor="middle" font-size="12" fill="#6a4a24">opt-in LAN door</text>
+          </svg>
+          <figcaption>One pairing protocol for every client is a choice. Loopback already has a stronger primitive.</figcaption>
+        </figure>
+        <dl class="fields">
+          <dt>Basis</dt>
+          <dd><code>direct:</code> loopback is exempt from Local Network; Bonjour hangs in <code>.preparing</code> when that permission is denied. The endpoint file does not authenticate the process on the named port. <code>reasoned:</code> deleting pairing for every spawned CLI would collapse distinct hosts into one peer — keep pairing for foreign clients.</dd>
+          <dt>Rationale</dt>
+          <dd>This is the daily hang. Claude’s disclaimer spawn never gets a Local Network prompt. Treating Bonjour as the stdio failure path converts “app is not publishing loopback” into a 15-second shrug.</dd>
+          <dt>Downsides</dt>
+          <dd>Need a crisp definition of “same-user signed CLI” so a random local process cannot skip pairing. Bonjour stays for a human-attended LAN client, or it is retired on purpose.</dd>
+        </dl>
+      </article>
+
+      <article class="idea" id="idea-3">
+        <h3>3. Reading-room catalog</h3>
+        <div class="chips">
+          <span class="chip">Conf 84%</span>
+          <span class="chip">Complexity High</span>
+        </div>
+        <p>Do not implement Resources as the same JSON-LD dumps under a new method. Tools return handles (event id, note id, thread id, photo id) plus a caption. <code>ListResources</code> is the catalog. <code>ReadResource</code> is the only body path — metered, logged, optionally redacted. Notes already fetch bodies by id; Messages and events still circulate the manuscript.</p>
+        <dl class="fields">
+          <dt>Basis</dt>
+          <dd><code>direct:</code> <code>ListResources</code> returns <code>[]</code>. <code>external:</code> macos-apps-mcp pointer catalogs; MCP 2026-07-28 Resources. <code>reasoned:</code> a circulating-stack Resource recreates today’s dump. A special-collections rule reduces wire bodies because agents stop calling fetch-everything to discover what exists.</dd>
+          <dt>Rationale</dt>
+          <dd>Body dumps blow context and overshare. One body door is where redaction, FetchPolicy, and a future journal attach. This is the 2026 differentiator that is not “add a 17th service.”</dd>
+          <dt>Downsides</dt>
+          <dd>Breaks hosts that assume tool results are complete records. Needs a migration story and a clear handle scheme. High implementation burden across 16 services.</dd>
+        </dl>
+      </article>
+
+      <article class="idea" id="idea-4">
+        <h3>4. Mutual AUTH</h3>
+        <div class="chips">
+          <span class="chip">Conf 82%</span>
+          <span class="chip warn">Complexity Medium</span>
+        </div>
+        <p>AUTH v1 is one-way: the CLI signs a nonce and connection id chosen by whoever challenged. Pairing codes still travel as <code>--pair</code> and <code>IMCP_PAIR_CODE</code>. Make the app sign the endpoint advertisement (or a server-auth frame). Keep the issuer in memory; stop putting the whole secret in argv or env — owner-only sidecar or inherited fd. Do not claim the pairing secret can “never be a string.”</p>
+        <dl class="fields">
+          <dt>Basis</dt>
+          <dd><code>direct:</code> <code>AuthPreamble.protocolVersion = 1</code>; payload is nonce then connectionID. Endpoint-file comments: the CLI signs a challenge from whatever peer answers the port. Pair UI still prints argv and env bearers.</dd>
+          <dt>Rationale</dt>
+          <dd>Review-trust hardened the file and left the speaker unauthenticated. Mutual AUTH plus a non-ps pairing handoff closes the leftover that every “pair Claude” instruction still teaches.</dd>
+          <dt>Downsides</dt>
+          <dd>Protocol bump. Debug ad-hoc signing must stay compatible with <code>install-local.sh</code>. Sidecar consume-on-read needs a race story for two spawned clients.</dd>
+        </dl>
+      </article>
+
+      <article class="idea" id="idea-5">
+        <h3>5. Dark-harbor notices</h3>
+        <div class="chips">
+          <span class="chip">Conf 90%</span>
+          <span class="chip info">Complexity Low</span>
+        </div>
+        <p>When loopback fails, the CLI should name the failed check — app quit, stale or unsigned endpoint file, recycled pid, zero services — in loopback-then-Bonjour order. Publish a Light List in the endpoint file (which lights are lit). Advertise liveness as a Resource, not an <code>imcp_status</code> tool. A status tool requires the harbor the ship cannot enter.</p>
+        <dl class="fields">
+          <dt>Basis</dt>
+          <dd><code>direct:</code> stdio timeout always cites Local Network. Endpoint miss silently returns Bonjour. File contents are port + pid only. Last plan forbade <code>imcp_status</code> as a tool. <code>external:</code> MCP Resources/Tasks are the spec-shaped home for operator state.</dd>
+          <dt>Rationale</dt>
+          <dd>This is the daily “iMCP is broken” ticket. Until the CLI can name the failed check, new tools and Notes search stay unreachable from the hosts people actually use.</dd>
+          <dt>Downsides</dt>
+          <dd>Widening the endpoint file is a compatibility change. Do not put secrets or message bodies in the Light List.</dd>
+        </dl>
+      </article>
+
+      <article class="idea" id="idea-6">
+        <h3>6. Intent ledger</h3>
+        <div class="chips">
+          <span class="chip">Conf 78%</span>
+          <span class="chip warn">Complexity Medium</span>
+        </div>
+        <p>Create-only Calendar and Reminders train agents to duplicate the user’s life. Contacts can already update. Treat that asymmetry as a decision, not an accident: agents propose writes; the signed app UI (menu bar, later a phone) commits. Expanding full CRUD makes iMCP a generic PIM API in a crowded field. Removing write authority from the pipe is the other pole. The ledger is the middle that stays a local personal-data MCP.</p>
+        <dl class="fields">
+          <dt>Basis</dt>
+          <dd><code>direct:</code> <code>events_create</code> and <code>reminders_create</code> exist; no update/delete. Approval is connect-time, not write-time. <code>external:</code> AirMCP preview/HITL. <code>reasoned:</code> a create-only verb in a loop-driven agent is a duplication engine.</dd>
+          <dt>Rationale</dt>
+          <dd>Last plan’s “no CRUD” was a stop condition. This is the product law: iMCP is allowed to draft, not to quietly rewrite identity.</dd>
+          <dt>Downsides</dt>
+          <dd>Proposal inbox is new UX. Existing Contacts update may need to become a proposal too, or stay the exception with a written reason.</dd>
+        </dl>
+      </article>
+    </section>
+
+    <section id="rejection-summary">
+      <h2>Rejection Summary</h2>
+      <table>
+        <thead>
+          <tr><th>#</th><th>Idea</th><th>Reason Rejected</th></tr>
+        </thead>
+        <tbody>
+          <tr><td>9</td><td>Delete pair/approve for every signed loopback CLI</td><td>basis refuted — signed pid authenticates the app, not the MCP host</td></tr>
+          <tr><td>21</td><td>Life domains above Apple apps</td><td>below ambition floor — no defect cite</td></tr>
+          <tr><td>29</td><td>Endpoint algebra</td><td>already covered by DiscoveryMode — metaphor, not a meeting</td></tr>
+          <tr><td>32</td><td>Schema.org as the service contract</td><td>below ambition floor — already in payloads</td></tr>
+          <tr><td>33–38</td><td>Marque / IFF / Bodleian / seal / mariners / notary</td><td>duplicates a stronger idea — ornamental rename</td></tr>
+          <tr><td>39</td><td>Tally-stick split secret</td><td>too expensive — does not fix same-user argv leakage</td></tr>
+          <tr><td>41</td><td>Dead-app sealed ledger</td><td>interesting but better as a variant of notices — dead pid already fails validation</td></tr>
+          <tr><td>42</td><td>Swarm budgets</td><td>not grounded — no N-agent problem in tree</td></tr>
+          <tr><td>46</td><td>Menu bar as MCP Apps host</td><td>basis refuted — iMCP is the server, not the host renderer</td></tr>
+          <tr><td>11</td><td>CLI launches the app</td><td>weak — cite does not address TCC</td></tr>
+          <tr><td>28</td><td>FetchPolicy as session bounds</td><td>unjustified — fights stateless MCP</td></tr>
+          <tr><td>C7</td><td>Host as product</td><td>duplicates / smuggles the refuted MCP Apps claim</td></tr>
+          <tr><td>C8 / 23 / 47</td><td>Phone as trust kernel</td><td>too expensive / weak prior art — iOS preview is not an approval kernel</td></tr>
+          <tr><td>4 / 5 / 16 / 26 / 36 / 40 / 48</td><td>Capability card, Notes create, UDS swap, descriptor catalog, seal UI, kitchen pass, never-a-string</td><td>overlap with stronger survivors or weak compulsion</td></tr>
+        </tbody>
+      </table>
+    </section>
+
+    <footer class="composition-signal">
+      Composed 2026-08-22T15:10Z by ce-ideate from surprise-me ideation on the iMCP repo (HEAD 00731b5).
+    </footer>
+  </div>
+</body>
+</html>

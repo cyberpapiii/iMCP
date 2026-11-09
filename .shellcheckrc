@@ -1,0 +1,3 @@
+# Scripts source Scripts/lib/imcp.sh by a path relative to themselves.
+source-path=SCRIPTDIR
+external-sources=true

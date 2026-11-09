@@ -1,44 +1,179 @@
 name: CI
 
+# A pull request and the push that merges it each run the required jobs: the
+# pull request is the merge gate, and the run on main is the only one whose
+# caches later pull requests can restore.
+#
+# The Xcode 27 preview job runs twice a week and on request, not per change.
+# Scripts/ship.sh already compiles every shipped change with the shipping
+# Mac's Xcode, which is a newer Xcode 27 than the preview image's, so per
+# change the job paid two macOS runs mostly to repeat that. Twice a week
+# still runs the tests on the preview image, catches an image that changed
+# under us, and keeps its cache from expiring (seven days unused).
 on:
     push:
         branches: ["main"]
     pull_request:
         branches: ["main"]
+    schedule:
+        - cron: "17 9 * * 1,4"
+    workflow_dispatch:
 
 permissions:
     contents: read
-    pull-requests: write
+
+# A newer push supersedes an in-flight run for the same ref, so a branch that
+# gets three commits in a minute pays for one CI run instead of three.
+concurrency:
+    group: ${{ github.workflow }}-${{ github.ref }}
+    cancel-in-progress: true
+
+env:
+    # The pinned toolchain for the required build and the Release build.
+    XCODE_VERSION: "26.0"
 
 jobs:
     build:
-        name: Build on macOS ${{ matrix.macos }} with Xcode ${{ matrix.xcode }}
-        runs-on: macos-${{ matrix.macos }}
-        env:
-            DEVELOPER_DIR: "/Applications/Xcode_${{ matrix.xcode }}.app/Contents/Developer"
+        # The pinned entry runs for pull requests and pushes; the preview
+        # entry on the schedule; both when the workflow is run by hand. The
+        # preview entry is GitHub's image for Xcode 27. It has no pinned Xcode
+        # path: preview images replace their Xcode builds without notice, so
+        # it takes whatever the image selects by default, and it gets longer
+        # because its cache can be cold.
+        #
+        # An experimental entry's name ends in " (experimental)". That suffix
+        # is how Scripts/ship.sh's merge gate would tell it from a required
+        # check (Scripts/lib/ci-checks.sh) if one ever ran on a pull request.
+        # Its failure fails the scheduled run, so it is reported, not hidden.
+        name: Build and test on macOS ${{ matrix.macos }} with ${{ matrix.xcode }}${{ matrix.experimental && ' (experimental)' || '' }}
+        runs-on: ${{ matrix.runner }}
         strategy:
             fail-fast: false
             matrix:
-                include:
-                    - macos: "26"
-                      xcode: "26.0"
-        timeout-minutes: 10
+                include: >-
+                    ${{ fromJSON(
+                    github.event_name == 'schedule'
+                    && '[{"macos":"27","xcode":"Xcode 27 preview","runner":"xcode-27","pinned":false,"experimental":true,"timeout":30}]'
+                    || github.event_name == 'workflow_dispatch'
+                    && '[{"macos":"26","xcode":"pinned Xcode","runner":"macos-26","pinned":true,"experimental":false,"timeout":15},{"macos":"27","xcode":"Xcode 27 preview","runner":"xcode-27","pinned":false,"experimental":true,"timeout":30}]'
+                    || '[{"macos":"26","xcode":"pinned Xcode","runner":"macos-26","pinned":true,"experimental":false,"timeout":15}]'
+                    ) }}
+        timeout-minutes: ${{ matrix.timeout }}
         steps:
             - name: Checkout code
-              uses: actions/checkout@v6
+              uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6.1.0
+              with:
+                  persist-credentials: false
 
-            - name: Cache Xcode build artifacts
-              uses: actions/cache@v5
+            # It also sets SIGNING_OVERRIDES for the steps below.
+            - name: Prepare Xcode
+              uses: ./.github/actions/prepare-xcode
+              with:
+                  xcode-version: ${{ matrix.pinned && env.XCODE_VERSION || '' }}
+                  entitlements: App/App.Debug.entitlements
+
+            # Build products are keyed on the project file and fall back to
+            # the most recent prefix match. Scripts/test.sh builds into
+            # .build/DerivedData.
+            #
+            # Restored everywhere, saved only on main: a cache saved from a
+            # pull request can be read by that pull request alone, so saving
+            # one there uploads half a gigabyte nobody restores.
+            - name: Restore build products
+              id: derived
+              uses: actions/cache/restore@caa296126883cff596d87d8935842f9db880ef25 # v5.1.0
+              with:
+                  # Compiler modules are toolchain internals; never cache them
+                  # (docs/solutions/conventions/xcode-module-cache-version-drift.md).
+                  path: |
+                      .build/DerivedData
+                      !.build/DerivedData/ModuleCache.noindex
+                  key: ${{ runner.os }}-xcode-${{ env.XCODE_BUILD }}-derived-${{ hashFiles('**/*.pbxproj') }}-${{ github.sha }}
+                  restore-keys: |
+                      ${{ runner.os }}-xcode-${{ env.XCODE_BUILD }}-derived-${{ hashFiles('**/*.pbxproj') }}-
+                      ${{ runner.os }}-xcode-${{ env.XCODE_BUILD }}-derived-
+
+            - name: Lint
+              run: Scripts/lint.sh
+
+            # The same recipe as a local run: build both suites once, then
+            # test the CLI and the app. Nothing is installed on a runner, so
+            # there is no app to stop.
+            - name: Build and test
+              run: Scripts/test.sh -- $SIGNING_OVERRIDES
+
+            - name: Save build products
+              if: github.ref == 'refs/heads/main' && steps.derived.outputs.cache-hit != 'true'
+              uses: actions/cache/save@caa296126883cff596d87d8935842f9db880ef25 # v5.1.0
+              with:
+                  path: |
+                      .build/DerivedData
+                      !.build/DerivedData/ModuleCache.noindex
+                  key: ${{ steps.derived.outputs.cache-primary-key }}
+
+    # Every other xcodebuild here is Debug. This is the only place code
+    # behind `#if !DEBUG` or WEATHERKIT_AVAILABLE (Release-only, including
+    # Weather service registration) is compiled before a publish. It is a
+    # separate job because a whole-module, two-architecture build does not
+    # fit in the test job's fifteen minutes.
+    release-build:
+        name: Release build on macOS 26 with pinned Xcode
+        if: github.event_name != 'schedule'
+        runs-on: macos-26
+        timeout-minutes: 20
+        steps:
+            - name: Checkout code
+              uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6.1.0
+              with:
+                  persist-credentials: false
+
+            - name: Prepare Xcode
+              uses: ./.github/actions/prepare-xcode
+              with:
+                  xcode-version: ${{ env.XCODE_VERSION }}
+                  entitlements: App/App.entitlements
+
+            - name: Restore build products
+              id: derived
+              uses: actions/cache/restore@caa296126883cff596d87d8935842f9db880ef25 # v5.1.0
               with:
                   path: |
                       ~/Library/Developer/Xcode/DerivedData
-                      ~/Library/Caches/org.swift.swiftpm
-                  key: ${{ runner.os }}-xcode-${{ matrix.xcode }}-derived-${{ hashFiles('**/Package.resolved') }}
+                      !~/Library/Developer/Xcode/DerivedData/ModuleCache.noindex
+                  key: ${{ runner.os }}-xcode-${{ env.XCODE_BUILD }}-release-derived-${{ hashFiles('**/*.pbxproj') }}-${{ github.sha }}
                   restore-keys: |
-                      ${{ runner.os }}-xcode-${{ matrix.xcode }}-derived-
+                      ${{ runner.os }}-xcode-${{ env.XCODE_BUILD }}-release-derived-${{ hashFiles('**/*.pbxproj') }}-
+                      ${{ runner.os }}-xcode-${{ env.XCODE_BUILD }}-release-derived-
 
-            - name: Lint
-              run: swift format lint --strict --recursive .
+            - name: Build Release
+              run: |
+                  xcodebuild -quiet build -scheme iMCP \
+                    -configuration Release -destination "platform=macOS" $SIGNING_OVERRIDES
 
-            - name: Build
-              run: xcodebuild -quiet -scheme iMCP -configuration Debug -destination "platform=macOS" build
+            - name: Save build products
+              if: github.ref == 'refs/heads/main' && steps.derived.outputs.cache-hit != 'true'
+              uses: actions/cache/save@caa296126883cff596d87d8935842f9db880ef25 # v5.1.0
+              with:
+                  path: |
+                      ~/Library/Developer/Xcode/DerivedData
+                      !~/Library/Developer/Xcode/DerivedData/ModuleCache.noindex
+                  key: ${{ steps.derived.outputs.cache-primary-key }}
+
+    # The scripts are the release, install and ship paths; a syntax error in
+    # one should fail here rather than halfway through a publish. Linux
+    # runners ship shellcheck, python3 and node, and start in seconds.
+    script-lint:
+        name: Lint scripts
+        if: github.event_name != 'schedule'
+        runs-on: ubuntu-latest
+        timeout-minutes: 5
+        steps:
+            - name: Checkout code
+              uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6.1.0
+              with:
+                  persist-credentials: false
+
+            - name: Lint scripts
+              run: |
+                  shellcheck --version
+                  Scripts/lint.sh --scripts

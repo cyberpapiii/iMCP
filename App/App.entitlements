@@ -4,22 +4,13 @@
 <dict>
 	<key>com.apple.developer.weatherkit</key>
 	<true/>
-	<key>com.apple.security.inherit</key>
+	<key>keychain-access-groups</key>
+	<array>
+		<string>$(AppIdentifierPrefix)co.dododo.iMCP</string>
+	</array>
+	<key>com.apple.security.automation.apple-events</key>
 	<true/>
-	<key>com.apple.security.personal-information.health</key>
+	<key>com.apple.security.personal-information.photos-library</key>
 	<true/>
-	<key>com.apple.security.temporary-exception.apple-events</key>
-	<array>
-		<string>com.apple.Terminal</string>
-	</array>
-	<key>com.apple.security.temporary-exception.files.absolute-path.read-write</key>
-	<array>
-		<string>/Users/*/Library/Messages/</string>
-	</array>
-	<key>com.apple.security.temporary-exception.mach-lookup.global-name</key>
-	<array>
-		<string>$(PRODUCT_BUNDLE_IDENTIFIER)-spks</string>
-		<string>$(PRODUCT_BUNDLE_IDENTIFIER)-spki</string>
-	</array>
 </dict>
 </plist>
