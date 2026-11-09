@@ -1388,7 +1388,8 @@ Stop and report back (do not improvise) if:
   to contain `docs/find-my-people-setup.md`, but visibility is PRIVATE: the
   three links work only for people with access to the repository. If this
   build is ever given to someone else, the links need a public target. That
-  is an owner decision, not an executor one.
+  is an owner decision, not an executor one. (Decided 2026-11-09: the
+  repository is public, so the links now work for everyone.)
 - **`PairedClientStore.clients` is a view cache, not a trust source.**
   `contains(fingerprint:)` and everything in `PairedClientStorage` still read
   the store each time. Do not "optimise" the connection path onto the cache.
