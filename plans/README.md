@@ -490,8 +490,8 @@ System Settings, or run the Find My People bootstrap.
 - **Reversed on 2026-10-12, both kept**: the `photos_search` place-name lookup
   (049 had deleted it) and the `imcp-server --pair <code>` flag (043 had removed
   it). Simplification must not remove working behaviour.
-- **About-box links** point at `cyberpapiii/iMCP` (048). That repository is
-  private, so the links work only for people with access.
+- **About-box links** point at `cyberpapiii/iMCP` (048). That repository has
+  been public since 2026-11-09, so the links work for everyone.
 
 ### Reconciliation of the third audit's open findings
 
