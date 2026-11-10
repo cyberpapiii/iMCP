@@ -600,6 +600,9 @@ actor ICloudAuthClient {
             // No answer says nothing about the session, and the page was
             // reaching Apple a moment ago: ask once more before moving on.
             if case .indeterminate = answer {
+                // A sign-out while the first probe was out leaves another
+                // session in the jar; this recovery must not probe or save it.
+                guard generation == authenticationGeneration else { return .superseded }
                 answer = await probe(account, disarmingPasswordGuard: true)
             }
             switch answer {
@@ -1675,7 +1678,7 @@ actor ICloudAuthClient {
         if AppleSessionStatus(statusCode: response.statusCode) != nil {
             // Apple's own one-line reason ("Missing X-APPLE-WEBAUTH-TOKEN
             // cookie" and the like) is the only thing that tells one dead
-            // session from another. Only its known words are logged.
+            // session from another.
             if let reason = Self.rejectionReason(in: response.body) {
                 Self.log.notice("Apple's reason: \(reason, privacy: .public)")
             }
