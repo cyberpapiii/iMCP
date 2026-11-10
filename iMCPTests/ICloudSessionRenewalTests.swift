@@ -368,6 +368,40 @@ final class ICloudSessionRenewalTests: XCTestCase {
         XCTAssertEqual(authorizer.attempts.count, 1, "Find My's page ran for the first lapse only")
     }
 
+    /// Apple's one-line reason on a 421 or 450 is logged in the clear, so
+    /// only words known to be harmless survive: a short list of diagnostic
+    /// words and the cookie names the client already names. Anything else,
+    /// plain letters included, is replaced.
+    func testARejectionReasonKeepsOnlyKnownWords() throws {
+        func reason(_ text: String, key: String = "error") throws -> String? {
+            ICloudAuthClient.rejectionReason(in: try JSONSerialization.data(withJSONObject: [key: text]))
+        }
+        XCTAssertEqual(
+            try reason("Missing X-APPLE-WEBAUTH-TOKEN cookie"),
+            "Missing X-APPLE-WEBAUTH-TOKEN cookie",
+            "the one reason seen live"
+        )
+        XCTAssertEqual(try reason("Invalid token AbC9dEf0123456789xyz"), "Invalid token …")
+        XCTAssertEqual(try reason("Missing cookie for user@example.com"), "Missing cookie for …")
+        XCTAssertEqual(try reason("Invalid token hunter"), "Invalid token …", "letters alone are not safe")
+        XCTAssertEqual(
+            try reason("Invalid X-APPLE-WEBAUTH-TOKEN=v=1:t=AbC9dEf"),
+            "Invalid X-APPLE-WEBAUTH-TOKEN …",
+            "a name keeps nothing joined to it"
+        )
+        XCTAssertEqual(try reason("Missing X-APPLE-SOMETHING-ELSE cookie"), "Missing … cookie")
+        XCTAssertEqual(try reason("Session expired.", key: "reason"), "Session expired")
+        XCTAssertEqual(try reason(String(repeating: "missing ", count: 40))?.count, 120)
+    }
+
+    func testARejectionBodyWithoutAReasonGivesNone() throws {
+        XCTAssertNil(ICloudAuthClient.rejectionReason(in: Data("<html></html>".utf8)))
+        XCTAssertNil(
+            ICloudAuthClient.rejectionReason(in: try JSONSerialization.data(withJSONObject: ["error": 421]))
+        )
+        XCTAssertNil(ICloudAuthClient.rejectionReason(in: Data()))
+    }
+
     /// A restored session whose first Find My call was just refused twice,
     /// with Find My's page ready to hand back a token and a service cookie.
     private func sessionAfterFindMyRejects(

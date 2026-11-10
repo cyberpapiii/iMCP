@@ -1675,7 +1675,7 @@ actor ICloudAuthClient {
         if AppleSessionStatus(statusCode: response.statusCode) != nil {
             // Apple's own one-line reason ("Missing X-APPLE-WEBAUTH-TOKEN
             // cookie" and the like) is the only thing that tells one dead
-            // session from another.
+            // session from another. Only its known words are logged.
             if let reason = Self.rejectionReason(in: response.body) {
                 Self.log.notice("Apple's reason: \(reason, privacy: .public)")
             }
@@ -1684,13 +1684,42 @@ actor ICloudAuthClient {
         return response
     }
 
-    /// The `error` or `reason` string of a rejection body, shortened. Apple
-    /// puts no token or account detail in it.
+    /// The `error` or `reason` string of a rejection body, for a log line
+    /// anyone can read. The text is Apple's, so nothing in it is trusted:
+    /// a word survives only when it is on the short list below or is one of
+    /// the cookie names this client already names. Every other word, plain
+    /// letters included, becomes a mark.
     static func rejectionReason(in body: Data) -> String? {
-        guard let object = try? JSONSerialization.jsonObject(with: body) as? [String: Any] else { return nil }
-        let text = (object["error"] as? String) ?? (object["reason"] as? String)
-        return text.map { String($0.prefix(120)) }
+        guard let object = try? JSONSerialization.jsonObject(with: body) as? [String: Any],
+            let text = (object["error"] as? String) ?? (object["reason"] as? String)
+        else { return nil }
+        var words: [String] = []
+        for piece in text.components(separatedBy: rejectionSeparators) where !piece.isEmpty {
+            let word = piece.trimmingCharacters(in: .punctuationCharacters)
+            let known = rejectionWords.contains(word.lowercased()) || rejectionNames.contains(word.uppercased())
+            if known {
+                words.append(word)
+            } else if words.last != rejectionMark {
+                words.append(rejectionMark)
+            }
+        }
+        return String(words.joined(separator: " ").prefix(120))
     }
+
+    private static let rejectionMark = "…"
+    private static let rejectionSeparators = CharacterSet.whitespacesAndNewlines.union(
+        CharacterSet(charactersIn: "=:;,\"'")
+    )
+    private static let rejectionNames: Set<String> = [
+        ICloudCookie.webAuthToken, ICloudCookie.webAuthUser, ICloudCookie.accountRepair,
+        ICloudCookie.findMyAuthorization,
+    ]
+    /// Grown only from reasons seen in logs.
+    private static let rejectionWords: Set<String> = [
+        "a", "an", "and", "authentication", "authorization", "cookie", "cookies", "expired", "for", "found",
+        "header", "invalid", "is", "missing", "no", "not", "or", "request", "required", "session", "the", "token",
+        "unauthorized",
+    ]
 
     /// Which tokens a step handed back, by name only. A step that returns no
     /// session token is the difference between a stale token and one that was
