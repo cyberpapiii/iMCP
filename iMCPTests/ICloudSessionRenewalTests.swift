@@ -341,6 +341,33 @@ final class ICloudSessionRenewalTests: XCTestCase {
         XCTAssertTrue(probes[2].contains("clientId=page-client-id"))
     }
 
+    /// A session saved from the page's jar is one the setup service answers
+    /// 421 to. At the next lapse that 421 leads to the trust-token sign-in:
+    /// one password, Find My's page not run again, nobody asked. The cases
+    /// where Apple wants a code, or Find My refuses the renewed session, are
+    /// pinned in `ICloudSilentReauthenticationTests`.
+    func testASavedPageSessionTheSetupServiceRejectsIsRenewedByOneSignIn() async throws {
+        let clock = TestClock()
+        let (session, transport, authorizer) = await sessionAfterFindMyRejects(clock: clock)
+        transport.stub("initClient", status: 450)
+        transport.stub("initClient", status: 450)
+        transport.stub("initClient", json: deviceListBody())
+        let first = await session.renewRejectedClient()
+        XCTAssertNotNil(first)
+        XCTAssertTrue(try XCTUnwrap(probeURLs(transport).last).contains("clientId=page-client-id"))
+
+        clock.advance(by: 20 * 60)
+        transport.stub("validate", status: 421)
+        stubSignIn(transport)
+        let second = await session.renewRejectedClient()
+
+        XCTAssertNotNil(second)
+        XCTAssertTrue(session.isSignedIn, "got \(session.state)")
+        XCTAssertNil(session.pauseReason)
+        XCTAssertEqual(transport.requests(matching: "signin/complete").count, 1)
+        XCTAssertEqual(authorizer.attempts.count, 1, "Find My's page ran for the first lapse only")
+    }
+
     /// A restored session whose first Find My call was just refused twice,
     /// with Find My's page ready to hand back a token and a service cookie.
     private func sessionAfterFindMyRejects(
