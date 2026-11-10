@@ -45,14 +45,21 @@ cached build must be refreshed before escalating to a password-bearing operation
 5. Treat Apple's own page returning 403 from `signin/complete` as a rejected saved password for this narrower challenge.
    Stop immediately and request a manual sign-in.
 
-6. Take the page's result whole. The page mints its own iCloud `clientId`, and Apple binds the session the page signs in
-   to it: replaying the page's cookies under iMCP's id earns `validate -> 421`. The script reports each of the page's
-   `setup/ws/1` and `fmipservice` calls (path, status, client id) from iCloud's frames; iMCP adopts the id of the last
-   accepted call, stores it as the session's client id, and replaces its jar with the page's instead of merging into it.
-7. Wait for the page's own Find My call to succeed before taking its cookies; the service cookie appears first. If that
-   call never shows, take the cookies eight seconds after the service cookie.
-8. If Apple still rejects the session after the page, ask for a sign-in. The one automatic password attempt is spent, and
-   a paused poll of a session Apple dropped (`validate -> 421`) asks for a sign-in rather than polling forever.
+6. Let Find My decide, not the setup service. After the page, `/setup/ws/1/validate` answered 421 on every live run,
+   seconds after Find My had answered the page itself. So the session is not validated there: iMCP keeps the endpoints
+   it already has and probes Find My directly.
+7. Try the page's session first: the page's whole jar in place of iMCP's, under the page's own `clientId` (the script
+   reports each of the page's `setup/ws/1` and `fmipservice` calls from iCloud's frames, and iMCP adopts the id of the
+   last accepted one). The cookies are taken once Find My has answered the page, or eight seconds after the service
+   cookie.
+8. If Find My refuses that, try iMCP's own browser session, which Apple had just validated, carrying only the
+   `X-APPLE-WEBAUTH-FMIP` cookie the page earned, under iMCP's own client id.
+9. If Find My refuses both, validate once: a terms or repair gate pauses; anything else asks for a sign-in, because the
+   one automatic password attempt is spent. A paused poll of a session Apple dropped also asks for a sign-in.
+
+Find My's authorization lapses when nothing polls it for roughly a quarter of an hour, as the web page's own idle
+timeout does. A closed lid or an offline stretch longer than that ends in a 450 on the next call, so this rung runs on
+most wakes and has to work unattended.
 
 The WebKit data store is nonpersistent. Passwords remain in memory, decrypted cookies are copied only between in-memory
 cookie jars, navigation is restricted to Apple HTTPS hosts, and no page body, field value, cookie value, or response body
@@ -67,9 +74,11 @@ is logged.
   again after process restart.
 - A session test proves that Apple's own page refusing the saved password ends in a manual sign-in, with no paused
   polling of a password Apple has already refused.
-- Live traces on 2026-11-09 (09:04 and 12:54) showed the page succeed and the session die after it: service cookie
-  set, then `validate -> 421`, then "waiting for Find My verification" polled every five minutes until a manual sign-in.
-  Session tests now pin the jar and client-id handover and the sign-in request on 421. The live handover is unproven
-  until the next 450; its log lines are `Find My page call: ... -> status` and `Find My page finished: ...`.
+- Live traces on 2026-11-09 (09:04, 12:54, 18:55) showed the page succeed and iMCP's replay fail: service cookie set,
+  the page's own `refreshClient -> 200`, then `validate -> 421` from iMCP with the page's jar and client id. Each
+  followed an offline stretch of twenty minutes or more. Session tests pin the two probes and their order. Which of the
+  two sessions Find My accepts is unproven until the next 450; the log says `Find My accepted the page's session` or
+  `Find My accepted iMCP's own session with the page's service cookie`, and `Find My page jar:` lists the cookie names
+  the page added and dropped.
 - Live trace on 2026-11-05 proved the state split: `/validate -> 200`, Find My `initClient -> 450`, Apple's own Find My
   page `signin/init -> 200`, then `signin/complete -> 403`. No full iMCP browser re-sign-in was needed to identify it.

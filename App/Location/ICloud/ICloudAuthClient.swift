@@ -541,6 +541,8 @@ actor ICloudAuthClient {
     private func authorizeFindMyService(after rejection: String) async -> ICloudRecoveryOutcome {
         let generation = authenticationGeneration
         let account: ICloudAccount
+        let own: (cookies: [HTTPCookie], clientID: String)
+        let authorized: FindMyWebAuthorization
         do {
             let credentials = try await loadStored(generation: generation)
             let password = try PasswordAttemptGuard.password(forUnattendedSignInWith: credentials)
@@ -549,16 +551,25 @@ actor ICloudAuthClient {
             }
             await Self.willSignIn()
             try await armPasswordGuard(generation: generation)
-            let authorized = try await webAuthorizer.authorize(
+            own = (transport.allCookies(), clientID)
+            authorized = try await webAuthorizer.authorize(
                 accountName: credentials.accountName,
                 password: password,
-                cookies: transport.allCookies()
+                cookies: own.cookies
             )
             // A sign-out during the page cleared the jar; the old account's
             // cookies must not land in it.
             try requireCurrent(generation)
-            adopt(authorized)
-            account = try await validateAccount(generation: generation)
+            adopt(authorized, replacing: own.cookies)
+            // The endpoints are the stored ones when there are any. Asking
+            // the setup service to validate the page's session answered 421
+            // on every live run, seconds after Find My had answered the page
+            // itself, so validation is not what decides here: Find My is.
+            if let stored = credentials.storedAccount(asOf: now()) {
+                account = stored
+            } else {
+                account = try await validateAccount(generation: generation)
+            }
         } catch ICloudAuthError.automaticReauthenticationRecentlyAttempted {
             return .passwordAttemptSpent
         } catch FindMyWebAuthorizationError.credentialsRejected {
@@ -580,26 +591,80 @@ actor ICloudAuthClient {
             Self.log.error("Find My service authorization failed: \(iCloudErrorDetail(error), privacy: .public)")
             return .verificationPending(error)
         }
+        // First the session exactly as the page left it, which Find My has
+        // just answered there.
+        switch await probe(account, disarmingPasswordGuard: true) {
+        case .accepted(let findMy):
+            Self.log.notice("Find My accepted the page's session after: \(rejection, privacy: .public)")
+            return .live(live(findMy))
+        case .rejected:
+            Self.log.notice("Find My rejected the page's session as iMCP replayed it")
+        case .indeterminate(let error):
+            Self.log.notice(
+                "Find My did not answer for the page's session: \(iCloudErrorDetail(error), privacy: .public)"
+            )
+        }
+        // Then iMCP's own browser session, which Apple had just validated,
+        // carrying only the service cookie the page earned.
+        let serviceCookies = authorized.cookies.filter { $0.name == ICloudCookie.findMyAuthorization }
+        guard !serviceCookies.isEmpty, generation == authenticationGeneration else {
+            return await rejectedAfterPage(rejection: rejection, generation: generation)
+        }
+        transport.clearCookies()
+        transport.install(own.cookies)
+        transport.install(serviceCookies)
+        clientID = own.clientID
+        clientIDNeedsWrite = false
         switch await probe(account, disarmingPasswordGuard: true) {
         case .accepted(let findMy):
             Self.log.notice(
-                "Find My authorized without replacing the browser session after: \(rejection, privacy: .public)"
+                "Find My accepted iMCP's own session with the page's service cookie after: \(rejection, privacy: .public)"
             )
             return .live(live(findMy))
         case .rejected:
-            return .accountRepairRequired
+            return await rejectedAfterPage(rejection: rejection, generation: generation)
         case .indeterminate(let error):
             return .verificationPending(error)
         }
     }
 
+    /// Apple's page took the password and Find My still refuses both
+    /// sessions. A terms or repair gate is the one case that clears without
+    /// a sign-in; anything else needs a person, because the one automatic
+    /// password attempt is spent.
+    private func rejectedAfterPage(rejection: String, generation: UInt) async -> ICloudRecoveryOutcome {
+        do {
+            _ = try await validateAccount(generation: generation)
+        } catch ICloudAuthError.accountRepairRequired {
+            return .accountRepairRequired
+        } catch ICloudAuthError.authenticationSuperseded {
+            return .superseded
+        } catch {
+            Self.log.notice(
+                "after Find My's page the setup service says: \(iCloudErrorDetail(error), privacy: .public)"
+            )
+        }
+        Self.log.error("Find My rejected every session after its own page accepted the password")
+        return .needsSignIn(rejection: rejection, ICloudAuthError.trustExpired)
+    }
+
     /// The page's jar replaces iMCP's whole: it started from iMCP's cookies, so
     /// it holds everything they did, and a superseded token left beside its
     /// replacement mixes two sessions. Its client id comes with it.
-    private func adopt(_ authorization: FindMyWebAuthorization) {
+    private func adopt(_ authorization: FindMyWebAuthorization, replacing own: [HTTPCookie]) {
         if !authorization.cookies.isEmpty {
+            // Names only, never values: which cookies the page added and
+            // which of iMCP's it dropped is what a failed handover turns on.
+            let before = Set(own.map(\.name))
+            let after = Set(authorization.cookies.map(\.name))
+            Self.log.notice(
+                "Find My page jar: \(authorization.cookies.count, privacy: .public) cookies; added \(after.subtracting(before).sorted().joined(separator: ","), privacy: .public); dropped \(before.subtracting(after).sorted().joined(separator: ","), privacy: .public)"
+            )
             transport.clearCookies()
             transport.install(authorization.cookies)
+            Self.log.notice(
+                "iMCP jar after the handover: \(self.transport.allCookies().count, privacy: .public) cookies"
+            )
         }
         if let pageID = authorization.clientID, pageID != clientID {
             Self.log.notice("Find My's page signed in under its own client id; adopting it")
@@ -1582,9 +1647,23 @@ actor ICloudAuthClient {
         // Both of Apple's session statuses mean start over here, not "try
         // another code".
         if AppleSessionStatus(statusCode: response.statusCode) != nil {
+            // Apple's own one-line reason ("Missing X-APPLE-WEBAUTH-TOKEN
+            // cookie" and the like) is the only thing that tells one dead
+            // session from another.
+            if let reason = Self.rejectionReason(in: response.body) {
+                Self.log.notice("Apple's reason: \(reason, privacy: .public)")
+            }
             throw ICloudAuthError.sessionExpired
         }
         return response
+    }
+
+    /// The `error` or `reason` string of a rejection body, shortened. Apple
+    /// puts no token or account detail in it.
+    static func rejectionReason(in body: Data) -> String? {
+        guard let object = try? JSONSerialization.jsonObject(with: body) as? [String: Any] else { return nil }
+        let text = (object["error"] as? String) ?? (object["reason"] as? String)
+        return text.map { String($0.prefix(120)) }
     }
 
     /// Which tokens a step handed back, by name only. A step that returns no
