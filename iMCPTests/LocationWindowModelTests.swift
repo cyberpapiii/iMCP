@@ -5,13 +5,28 @@ import XCTest
 
 @testable import iMCP
 
+/// Noon today. A test that records an hour of fixes ending "now" and then
+/// reads today's stays must not run on the real clock: for the first hour
+/// after midnight that hour straddles two days and today has no stay yet.
+private func noonToday() -> Date {
+    Calendar.current.date(bySettingHour: 12, minute: 0, second: 0, of: Date())!
+}
+
+extension WallClock {
+    /// A clock that always reads `moment` and whose sleeps end only when
+    /// cancelled, so nothing scheduled against it fires.
+    fileprivate static func stopped(at moment: Date) -> WallClock {
+        WallClock(now: { moment }, sleepUntil: { _ in try await Task.sleep(for: .seconds(86_400)) })
+    }
+}
+
 /// The window's model against a real store: what the sidebar lists and what
 /// naming a stay writes, with no Find My in the room.
 final class LocationWindowModelTests: XCTestCase {
     @MainActor
     func testReloadListsTodaysStaysAndNamingWritesThePlaceTheToolsRead() async throws {
         let directory = temporaryDirectoryURL()
-        let now = Date()
+        let now = noonToday()
         let store = LocationHistoryStore(url: directory.appendingPathComponent("history.sqlite"), now: { now })
         var samples: [LocationSample] = []
         for minutesAgo in stride(from: 60, through: 5, by: -10) {
@@ -42,7 +57,8 @@ final class LocationWindowModelTests: XCTestCase {
             },
             addressLoader: { _, _ in "112 Harbor St" },
             session: { session },
-            samplerStatus: { LocationSamplerStatus(isRunning: true, lastSuccessAt: now) }
+            samplerStatus: { LocationSamplerStatus(isRunning: true, lastSuccessAt: now) },
+            clock: .stopped(at: now)
         )
 
         await model.reload()
@@ -104,7 +120,7 @@ extension LocationWindowModelTests {
     @MainActor
     func testAddingBySearchKeepsSearchResultInsteadOfNearbyRecordedFixes() async throws {
         let directory = temporaryDirectoryURL()
-        let now = Date()
+        let now = noonToday()
         let store = LocationHistoryStore(url: directory.appendingPathComponent("history.sqlite"), now: { now })
         // Fixes 60 m north of the address the user will search for.
         let address = (latitude: 40.7340, longitude: -74.9869)
@@ -133,7 +149,8 @@ extension LocationWindowModelTests {
             venueLookup: VenueLookup { _, _, _ in [] },
             addressLoader: { _, _ in nil },
             session: { session },
-            samplerStatus: { LocationSamplerStatus(isRunning: true) }
+            samplerStatus: { LocationSamplerStatus(isRunning: true) },
+            clock: .stopped(at: now)
         )
 
         model.sheet = .adding
@@ -423,7 +440,7 @@ extension LocationWindowModelTests {
     @MainActor
     func testANewerReloadReplacesTheOneInFlight() async throws {
         let directory = temporaryDirectoryURL()
-        let now = Date()
+        let now = noonToday()
         let store = LocationHistoryStore(url: directory.appendingPathComponent("history.sqlite"), now: { now })
         var samples: [LocationSample] = []
         for minutesAgo in stride(from: 60, through: 5, by: -10) {
@@ -455,7 +472,8 @@ extension LocationWindowModelTests {
                 return "First St"
             },
             session: { session },
-            samplerStatus: { LocationSamplerStatus(isRunning: true) }
+            samplerStatus: { LocationSamplerStatus(isRunning: true) },
+            clock: .stopped(at: now)
         )
 
         let first = Task { await model.reload() }

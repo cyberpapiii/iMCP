@@ -54,6 +54,10 @@ final class ICloudSessionRenewalTests: XCTestCase {
         transport.stub("initClient", json: deviceListBody())
     }
 
+    /// How Apple marks a session that is gated behind updated terms: the one
+    /// rejection after Find My's page that clears without a sign-in.
+    private let repairGate = ["Set-Cookie": "\(ICloudCookie.accountRepair)=1; Domain=.icloud.com; Path=/"]
+
     private func deviceListBody() -> [String: Any] {
         [
             "serverContext": ["a": 1],
@@ -78,7 +82,6 @@ final class ICloudSessionRenewalTests: XCTestCase {
         transport.stub("validate", json: accountLoginBody())
         transport.stub("initClient", status: 450)
         transport.stub("initClient", status: 450)
-        transport.stub("validate", json: accountLoginBody())
         transport.stub("initClient", json: deviceListBody())
 
         let findMy = await session.renewRejectedClient()
@@ -87,7 +90,11 @@ final class ICloudSessionRenewalTests: XCTestCase {
         XCTAssertTrue(session.isSignedIn, "got \(session.state)")
         XCTAssertNil(session.lastInvalidationReason)
         XCTAssertEqual(authorizer.attempts.count, 1)
-        XCTAssertEqual(transport.requests(matching: "validate").count, 2)
+        XCTAssertEqual(
+            transport.requests(matching: "validate").count,
+            1,
+            "after the page Find My decides, on the stored endpoints"
+        )
         XCTAssertTrue(transport.requests(matching: "signin/complete").isEmpty)
         XCTAssertTrue(transport.requests(matching: "accountLogin").isEmpty)
     }
@@ -137,10 +144,11 @@ final class ICloudSessionRenewalTests: XCTestCase {
         XCTAssertTrue(transport.requests(matching: "signin/complete").isEmpty)
     }
 
-    /// Seen live twice on 2026-11-09: Find My's page signed in and set its
-    /// service cookie, then Apple answered 421 to the session iMCP replayed.
-    /// The page mints its own client id, and Apple binds what the page signed
-    /// in to it, so iMCP takes the page's jar whole and its client id with it.
+    /// Seen live three times on 2026-11-09: Find My's page signed in, Find My
+    /// answered the page, and the setup service then answered 421 to iMCP's
+    /// validation of the same session. So Find My decides, not validation:
+    /// iMCP takes the page's jar whole and its client id with it, and asks
+    /// Find My on the endpoints it already has.
     func testFindMysPageHandsOverItsJarAndClientID() async throws {
         let transport = ScriptedTransport()
         let (storage, storedData) = storageInMemory()
@@ -162,15 +170,12 @@ final class ICloudSessionRenewalTests: XCTestCase {
         transport.stub("validate", json: accountLoginBody())
         transport.stub("initClient", status: 450)
         transport.stub("initClient", status: 450)
-        transport.stub("validate", json: accountLoginBody())
         transport.stub("initClient", json: deviceListBody())
 
         let findMy = await session.renewRejectedClient()
 
         XCTAssertNotNil(findMy)
         XCTAssertTrue(session.isSignedIn, "got \(session.state)")
-        let afterPage = try XCTUnwrap(transport.requests(matching: "validate").last)
-        XCTAssertTrue(afterPage.request.url!.absoluteString.contains("clientId=page-client-id"))
         let probe = try XCTUnwrap(transport.requests(matching: "initClient").last)
         XCTAssertTrue(probe.request.url!.absoluteString.contains("clientId=page-client-id"))
         let tokens = transport.allCookies().filter { $0.name == "X-APPLE-WEBAUTH-TOKEN" }.map(\.value)
@@ -204,9 +209,10 @@ final class ICloudSessionRenewalTests: XCTestCase {
         let authorizer = ScriptedWebAuthorizer()
         let session = ICloudSession(transport: transport, storage: storage, webAuthorizer: authorizer)
         await session.restoreIfNeeded()
+        authorizer.produce(pageCookies(), clientID: "page-client-id")
         transport.stub("validate", json: accountLoginBody())
-        transport.stub("initClient", status: 450)
-        transport.stub("initClient", status: 450)
+        // Before the page, with the page's session, with iMCP's own session.
+        for _ in 0 ..< 6 { transport.stub("initClient", status: 450) }
         transport.stub("validate", status: 421)
 
         let findMy = await session.renewRejectedClient()
@@ -215,7 +221,49 @@ final class ICloudSessionRenewalTests: XCTestCase {
         XCTAssertEqual(session.state, .needsReauthentication)
         XCTAssertNil(session.pauseReason)
         XCTAssertEqual(authorizer.attempts.count, 1)
+        XCTAssertEqual(transport.requests(matching: "initClient").count, 6)
         XCTAssertTrue(transport.requests(matching: "signin/complete").isEmpty)
+    }
+
+    /// When Find My refuses the page's session as iMCP replays it, iMCP's own
+    /// browser session gets one try carrying only the service cookie the
+    /// page earned, under iMCP's own client id.
+    func testFindMysServiceCookieOnTheOwnSessionIsTheSecondTry() async throws {
+        let transport = ScriptedTransport()
+        let (storage, storedData) = storageInMemory()
+        await storage.save(stored(clientID: "stored-client-id"))
+        let authorizer = ScriptedWebAuthorizer()
+        authorizer.produce(pageCookies(), clientID: "page-client-id")
+        let session = ICloudSession(transport: transport, storage: storage, webAuthorizer: authorizer)
+        await session.restoreIfNeeded()
+        transport.stub("validate", json: accountLoginBody())
+        for _ in 0 ..< 4 { transport.stub("initClient", status: 450) }
+        transport.stub("initClient", json: deviceListBody())
+
+        let findMy = await session.renewRejectedClient()
+
+        XCTAssertNotNil(findMy)
+        XCTAssertTrue(session.isSignedIn, "got \(session.state)")
+        let probes = transport.requests(matching: "initClient").map { $0.request.url!.absoluteString }
+        XCTAssertTrue(probes[2].contains("clientId=page-client-id"), "the page's session first")
+        XCTAssertTrue(try XCTUnwrap(probes.last).contains("clientId=stored-client-id"))
+        let jar = transport.allCookies()
+        // The scripted jar appends rather than replaces, so compare as sets.
+        XCTAssertEqual(Set(jar.filter { $0.name == "X-APPLE-WEBAUTH-TOKEN" }.map(\.value)), ["old"])
+        XCTAssertEqual(Set(jar.filter { $0.name == ICloudCookie.findMyAuthorization }.map(\.value)), ["fmip"])
+        let saved = try JSONDecoder().decode(ICloudCredentials.self, from: try XCTUnwrap(storedData()))
+        XCTAssertEqual(saved.clientID, "stored-client-id")
+    }
+
+    private func pageCookies() -> [HTTPCookie] {
+        [
+            HTTPCookie(properties: [
+                .name: "X-APPLE-WEBAUTH-TOKEN", .value: "page", .domain: ".icloud.com", .path: "/",
+            ])!,
+            HTTPCookie(properties: [
+                .name: ICloudCookie.findMyAuthorization, .value: "fmip", .domain: ".icloud.com", .path: "/",
+            ])!,
+        ]
     }
 
     /// A paused session Apple has since dropped outright cannot come back on
@@ -231,7 +279,7 @@ final class ICloudSessionRenewalTests: XCTestCase {
         transport.stub("validate", json: accountLoginBody())
         transport.stub("initClient", status: 450)
         transport.stub("initClient", status: 450)
-        transport.stub("validate", json: accountLoginBody())
+        transport.stub("validate", headers: repairGate, json: accountLoginBody())
         transport.stub("initClient", status: 450)
         transport.stub("initClient", status: 450)
         _ = await session.renewRejectedClient()
@@ -394,7 +442,6 @@ final class ICloudSessionRenewalTests: XCTestCase {
         transport.stub("validate", json: accountLoginBody())
         transport.stub("initClient", status: 450)
         transport.stub("initClient", status: 450)
-        transport.stub("validate", json: accountLoginBody())
         transport.stub("initClient", json: deviceListBody())
     }
 
@@ -420,7 +467,7 @@ final class ICloudSessionRenewalTests: XCTestCase {
 
         XCTAssertNil(second)
         XCTAssertEqual(authorizer.attempts.count, 1, "the password went out once")
-        XCTAssertEqual(transport.requests(matching: "validate").count, 2, "the second renewal reached nothing")
+        XCTAssertEqual(transport.requests(matching: "validate").count, 1, "the second renewal reached nothing")
         XCTAssertTrue(session.isSignedIn, "the old client stays: got \(session.state)")
         XCTAssertEqual(session.lastFailure, .renewedRecently)
         let toolError = ICloudStatus.toolError(of: session).errorDescription ?? ""
@@ -707,7 +754,7 @@ final class ICloudSessionRenewalTests: XCTestCase {
         transport.stub("validate", json: accountLoginBody())
         transport.stub("initClient", status: 450)
         transport.stub("initClient", status: 450)
-        transport.stub("validate", json: accountLoginBody())
+        transport.stub("validate", headers: repairGate, json: accountLoginBody())
         transport.stub("initClient", status: 450)
         transport.stub("initClient", status: 450)
         _ = await session.renewRejectedClient()
@@ -800,7 +847,7 @@ final class ICloudSessionRenewalTests: XCTestCase {
         transport.stub("validate", json: accountLoginBody())
         transport.stub("initClient", status: 450)
         transport.stub("initClient", status: 450)
-        transport.stub("validate", json: accountLoginBody())
+        transport.stub("validate", headers: repairGate, json: accountLoginBody())
         transport.stub("initClient", status: 450)
         transport.stub("initClient", status: 450)
         _ = await session.renewRejectedClient()
