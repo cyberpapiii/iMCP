@@ -12,14 +12,6 @@ private func noonToday() -> Date {
     Calendar.current.date(bySettingHour: 12, minute: 0, second: 0, of: Date())!
 }
 
-extension WallClock {
-    /// A clock that always reads `moment` and whose sleeps end only when
-    /// cancelled, so nothing scheduled against it fires.
-    fileprivate static func stopped(at moment: Date) -> WallClock {
-        WallClock(now: { moment }, sleepUntil: { _ in try await Task.sleep(for: .seconds(86_400)) })
-    }
-}
-
 /// The window's model against a real store: what the sidebar lists and what
 /// naming a stay writes, with no Find My in the room.
 final class LocationWindowModelTests: XCTestCase {
@@ -58,7 +50,7 @@ final class LocationWindowModelTests: XCTestCase {
             addressLoader: { _, _ in "112 Harbor St" },
             session: { session },
             samplerStatus: { LocationSamplerStatus(isRunning: true, lastSuccessAt: now) },
-            clock: .stopped(at: now)
+            clock: TestClock(start: now).wallClock
         )
 
         await model.reload()
@@ -150,7 +142,7 @@ extension LocationWindowModelTests {
             addressLoader: { _, _ in nil },
             session: { session },
             samplerStatus: { LocationSamplerStatus(isRunning: true) },
-            clock: .stopped(at: now)
+            clock: TestClock(start: now).wallClock
         )
 
         model.sheet = .adding
@@ -473,7 +465,7 @@ extension LocationWindowModelTests {
             },
             session: { session },
             samplerStatus: { LocationSamplerStatus(isRunning: true) },
-            clock: .stopped(at: now)
+            clock: TestClock(start: now).wallClock
         )
 
         let first = Task { await model.reload() }
